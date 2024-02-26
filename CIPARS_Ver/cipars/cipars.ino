@@ -1,7 +1,7 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*  25.02.2024 -Версия CIPARS
- *
+/*  25.02.2024 - Версия CIPARS
+ *   
  *  06.05.2022 
  *  - Переработал программу для 2-строчного экрана
  *
@@ -37,9 +37,9 @@ unsigned long prevUpdateDataIna = 0; // для перерыва между об�
 #include <Wire.h>
 #include <SPI.h>
 
-#include <LCD_1602_RUS.h>               // https://github.com/ssilver2007/LCD_1602_RUS
+#include <LCD_1602_RUS.h>      // https://github.com/ssilver2007/LCD_1602_RUS
 LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
-
+                               //  
 #include "INA219.h"
 INA219 ina219;
 
@@ -134,7 +134,7 @@ Cl_Btn Btn1(PIN_ENCODER_BUTTON); //Экземпляр обработчика д�
 
 /******* Простой энкодер *******/
 #include <util/atomic.h>        // для атомарности чтения данных в прерываниях
-#include <RotaryEncoder.h>
+#include <RotaryEncoder.h>      // https://www.arduino.cc/reference/en/libraries/rotaryencoder/
 RotaryEncoder encoder(PIN_ENCODER1, PIN_ENCODER2);
 
 volatile int newEncoderPos; // новая позиция энкодера
@@ -394,13 +394,14 @@ void setup() {
 
   analogReference(INTERNAL);
 
-  lcd.begin();
+ // lcd.begin();  // Зависит от версии библиотеки
+  lcd.init();
   lcd.backlight();
   delay(10);
   ina219.begin(0x40); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
-  ina219.configure(0, 2, 12, 12, 7); // 16S -8.51ms
+  ina219.configure(0, 2, 12, 12, 7);      // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
-  AD9833reset();                   // Ресет после включения питания
+  AD9833reset();                          // Ресет после включения питания
   delay(10);
   Serial.print("freq=");
   Serial.println(freq);
