@@ -395,7 +395,7 @@ void setup() {
   analogReference(INTERNAL);
 
  // lcd.begin();  // Зависит от версии библиотеки
-  lcd.init();
+  lcd.init();     // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/ 
   lcd.backlight();
   delay(10);
   ina219.begin(0x40); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
