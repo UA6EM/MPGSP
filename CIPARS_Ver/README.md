@@ -1,4 +1,4 @@
-# Версия генератора от CIPARS - [Форум здесь] (https://forum.arduino.ru/t/generator-dlya-katushki-mishina/8579/237?u=ua6em), находится.
+# Версия генератора от CIPARS - [Форум здесь] (https://forum.arduino.ru/t/generator-dlya-katushki-mishina), находится.
 
 ## Печатная плата и схема проекта в EasyEDA доступны по этому адресу - https://oshwlab.com/indulisap/mpgsp-cipars-2
 ![](20240225_162744.jpg?raw=true)
