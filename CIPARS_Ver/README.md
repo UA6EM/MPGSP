@@ -7,3 +7,5 @@
 ![](20240225_163145.jpg?raw=true)
 ![](20240225_175301.jpg?raw=true)
 ![](20240225_175326.jpg?raw=true)
+
+![](Schematic_schem.sch-3_2024-02-26.png?raw=true)
