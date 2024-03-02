@@ -3,7 +3,7 @@
 ## Доступен форум
 [Форум находится здесь](https://forum.arduino.ru/t/generator-dlya-katushki-mishina).
 
-## Печатная плата и схема проекта в EasyEDA доступны по этому адресу - https://oshwlab.com/indulisap/mpgsp-cipars-2
+## Печатная плата и схема проекта в EasyEDA [доступны по этому адресу](https://oshwlab.com/indulisap/mpgsp-cipars-2)
 ![](20240225_162744.jpg?raw=true)
 ![](20240225_162934.jpg?raw=true)
 ![](20240225_163111.jpg?raw=true)
