@@ -366,11 +366,12 @@ void readAnalogAndSetFreqInLoop() {
   }
 }
 
-//********************* Хильда Кларк *********************/
-
-
+//********************* Хильда Кларк (Цеппер) *********************/
 void zepper() {
   freq = 30000;
+  lcd.setCursor(0, 1);
+  lcd.print("                "); // чистим экран
+
   for ( int zep = 0; zep <= 4200; zep++) {
 
     // подаём частоту на генератор
@@ -383,6 +384,14 @@ void zepper() {
     float kHz = freq_tic / 1000;
     lcd.print(kHz, 0);
     lcd.print("kHz");
+
+    lcd.setCursor(9, 1);
+    lcd.print("I=");
+    lcd.setCursor(11, 1);
+    lcd.print(Data_ina219 * 2);
+    lcd.print("ma");
+
+    Data_ina219 = ina219.shuntCurrent() * 1000;
     delay(1000);
   }
 }
