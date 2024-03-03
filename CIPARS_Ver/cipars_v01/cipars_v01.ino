@@ -366,9 +366,12 @@ void readAnalogAndSetFreqInLoop() {
   }
 }
 
+
 //********************* Хильда Кларк (Цеппер) *********************/
 void zepper() {
   freq = 30000;
+  lcd.setCursor(0,0);
+  lcd.print("  Mode  Zepper  "); // Вывод режима работы
   lcd.setCursor(0, 1);
   lcd.print("                "); // чистим экран
 
