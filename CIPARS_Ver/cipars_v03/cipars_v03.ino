@@ -1,6 +1,8 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*   13ю03ю2024 - проба регулировки усиления на MCP4131
+/*   13.03.2024 - проба регулировки усиления на MCP4151
+ *              - добавлен расширитель портов под блок согласования
+ *              
  *   07.03.2024 - проба регулировки усиления на MCP4131
  *   25.02.2024 - Версия CIPARS    
  *   06.05.2022 - Переработал программу для 2-строчного экрана
@@ -35,6 +37,9 @@ unsigned long prevReadAnalogTime = 0; // для отсчета 10 секунд �
 unsigned long prevUpdateDataIna = 0; // для перерыва между обновлениями данных ina
 
 #include <Wire.h>
+#include <PCF8575.h>       // https://www.arduino.cc/reference/en/libraries/pcf8575/
+PCF8575 PCF(0x20);         // Расширитель портов
+
 #include <SPI.h>
 
 /*
@@ -45,7 +50,7 @@ MCP4131 Potentiometer(chipSelect);
 */
 
 #include <MCP4151.h>              // https://www.arduino.cc/reference/en/libraries/mcp4151/
-const int chipSelect = 4;         // Define chipselect pin for MCP4151
+const int chipSelect = 4;        // Define chipselect pin for MCP4151
 unsigned int wiperValue;          // variable to hold wipervalue for MCP4151
 MCP4151 Potentiometer(chipSelect, MOSI,  MISO, SCK); //(chipSelect);
 
@@ -379,6 +384,15 @@ void readAnalogAndSetFreqInLoop() {
 
 //************************** SETUP *************************/
 void setup() {
+    Wire.begin();
+    PCF.begin();
+    for(int r=0; r<16; r++){  // все реле включим
+     PCF.write(r, HIGH);  
+    }
+     for(int r=0; r<16; r++){  // все реле выключим
+     PCF.write(r, LOW);  
+    } 
+    
   // настройки потенциометра
   // сначала настраиваем потенциометр
   pinMode(PIN_CS, OUTPUT);
