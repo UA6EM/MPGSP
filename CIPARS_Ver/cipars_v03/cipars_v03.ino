@@ -460,6 +460,9 @@ void setup() {
 
 // *** ТЕЛО ПРОГРАММЫ ***
 void loop() {
+  
+  Potentiometer.writeValue(wiperValue); // Set MCP4151 to mid position
+  
   mill = millis();
   Btn1.run();
 
