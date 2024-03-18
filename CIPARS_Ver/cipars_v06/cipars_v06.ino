@@ -1,4 +1,5 @@
 // Генератор для катушки Мишина на основе DDS AD9833
+// Для Гитхаба
 
 /*  18.03.2024 - // https://codeload.github.com/UA6EM/Arduino-MCP4131/zip/refs/heads/mpgsp
     17.03.2024 - // https://codeload.github.com/UA6EM/MCP4151/zip/refs/heads/mpgsp
