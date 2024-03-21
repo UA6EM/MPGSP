@@ -1,128 +1,375 @@
 // Генератор для катушки Мишина на основе DDS AD9833
-// (c)UA6EM
-/*
- * Версия от 12.06.2019 - Добавлено измерение напряжения, вывод на дисплей, установка
- * начальной частоты определённой в дефайне, если не найден резонанс катушки
- * - напряжение показывало отрицательное, ina219 был сконфигурирован на адрес 44, 
- * - поправил скетч пробовал в работе при запитке от USB, на Vin+ подавал +5V с ардуины
- * - вывод Vin- (ina219) нагрузил резистором 10 ком, напряжение показывает, ток - 0 )))
- *  
- *  - Версия от 22.06.2019 - Добавлен зуммер, работает через прерывание 1, 
- *                           формируется с частотой 490 герц
- * - добавлена библиотека модуля DAC для регулировки усиления, выставляет первичное
- *   значение на выходе модуля в 0.8 вольта (регулировка усиления TDA-7056) 
- * - Версия от 04.08.2019 - Добавлена процедура рассчета скользящего среднего (moving average)
- * -
- */
-#define SECONDS(x) ((x) * 1000UL)
-#define MINUTES(x)  (SECONDS(x) * 60UL)
-#define HOURS(x)  (MINUTES(x) * 60UL)
-#define DAYS(x)   (HOURS(x) * 24UL)
-#define WEEKS(x)  (DAYS(x) * 7UL)
-unsigned long interval = MINUTES(1);
 
+/*  18.03.2024 - // https://codeload.github.com/UA6EM/Arduino-MCP4131/zip/refs/heads/mpgsp
+    17.03.2024 - // https://codeload.github.com/UA6EM/MCP4151/zip/refs/heads/mpgsp
+
+    16.03.2024 - регулировка MCP4131 продублирована на энкодер и кнопки
+    07.03.2024 - проба регулировки усиления на MCP4131
+    25.02.2024 - Версия CIPARS
+
+    06.05.2022
+    - Переработал программу для 2-строчного экрана
+
+   11.06.2022
+    - Во время работы отключил возможность крутить время
+    - В меня при работе изменил Таймре на Т, добавил знак V
+    - Добавил всем пинам имя
+    - Определил пины для потенциометра ...
+    - Добавил управление потенциометром с помощью энкодера
+
+   03.07.2022
+    - перенес инициализацию потенциометра в начало setup
+*/
+#define SECONDS(x) ((x)*1000UL)
+#define MINUTES(x) (SECONDS(x) * 60UL)
+#define HOURS(x) (MINUTES(x) * 60UL)
+#define DAYS(x) (HOURS(x) * 24UL)
+#define WEEKS(x) (DAYS(x) * 7UL)
+unsigned long interval = MINUTES(1);
+unsigned long oneMinute = MINUTES(1);
+unsigned long timers = MINUTES(5);  // время таймера 15, 30, 45 или 60 минут
+unsigned long memTimers = 0;        //здесь будем хранить установленное время таймера
+unsigned long oldmemTimers = 0;
+byte isWorkStarted = 0;  // флаг запуска таймера
+
+unsigned long timMillis = 0;
+unsigned long oldMillis = 0;
+unsigned long mill;  // переменная под millis()
+unsigned long prevCorrectTime = 0;
+unsigned long prevReadAnalogTime = 0;  // для отсчета 10 секунд между подстройкой частоты
+unsigned long prevUpdateDataIna = 0;   // для перерыва между обновлениями данных ina
+
+/*
+#include <LiquidCrystal_I2C_Menu.h>       // https://github.com/VladimirTsibrov/LiquidCrystal_I2C_Menu
+LiquidCrystal_I2C_Menu  lcd(0x3F, 16, 2); // https://tsibrov.blogspot.com/2020/09/LiquidCrystal-I2C-Menu.html
+*/
+
+#include <LCD_1602_RUS.h>         // https://github.com/ssilver2007/LCD_1602_RUS
+LCD_1602_RUS lcd(0x3F, 16, 2);  // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
+//LCD_1602_RUS lcd(0x3F, 20, 4);
+/* */
+
+#define MCP4151MOD  // снять ремарки если используем библиотеку MCP4151(SPI у неё 16 битный)
 #include <Wire.h>
 #include <SPI.h>
-#include "LiquidCrystal_I2C.h"        // брал здесь - https://iarduino.ru/file/134.html
-LiquidCrystal_I2C lcd(0x3F, 20, 4);   // Для экрана 20х4, I2C адрес дисплея уточнить  
-//#include <Adafruit_INA219.h>
-//Adafruit_INA219 ina219;
+
+
+
+
+const int chipSelect = 4;  // Define chipselect pin for MCP4131 or MCP4151
+unsigned int wiperValue;   // variable to hold wipervalue for MCP4131 or MCP4151
+
+#ifndef MCP4151MOD
+#include <MCP4131.h>  // https://github.com/UA6EM/Arduino-MCP4131/tree/mpgsp
+
+MCP4131 Potentiometer(chipSelect);
+#else
+#include <MCP4151.h>  // https://github.com/UA6EM/MCP4151/tree/mpgsp
+#define  SCK   13
+#define  MOSI  11
+#define  MISO  12
+#define  CS    4
+//MCP4151 Potentiometer(chipSelect);
+MCP4151 Potentiometer(CS, MOSI, MISO, SCK, 4000000, 250000, SPI_MODE0);
+#endif
+/*
+
+*/
 
 #include "INA219.h"
 INA219 ina219;
 
-//#define TWBR  //Зарезервировано для частоты обмена с DAC в 400Кгц
-#include <Adafruit_MCP4725.h>
-Adafruit_MCP4725 dac;
-unsigned int dVolume = 737; // Напряжение на выходе DAC 
-                            // около 0.9 вольта
 
-#define PIN_ZUM 12  //  был 10 пин
-#define pinINT1 3   // этот пин Шимим 490Гц 
-#define zFreq 2     // делитель интервала - секунда/2
+// PINS
+//      chipSelect = 4 MCP4151 (SPI)
 
-unsigned int imax = 0;
+// SPI  SCK =  13
+//      MOSI = 11
+//      MISO = 12
+//      SS   = 10
+
+#define ON_OFF_CASCADE_PIN 5  // для выключения выходного каскада
+#define PIN_ENCODER1 6
+#define PIN_ENCODER2 7
+#define PIN_ENCODER3 3
+#define PIN_ENCODER_BUTTON 8
+#define PIN_ZUM 9
+#define PIN_FSYNC 10
+#define FNC_PIN 10
+
+// пины потенциометра
+#define PIN_CS  A0
+#define PIN_INC A1
+#define PIN_UD  A2
+#define CORRECT_PIN A7  // пин для внешней корректировки частоты.
+
+
+#define zFreq 2  // делитель интервала - секунда/2
+
 unsigned int Data_ina219 = 0;
-volatile float Voltage_ina219 = 0;
- 
-const int SINE = 0x2000;                    // определяем значение регистров AD9833 взависимости от формы сигнала
-const int SQUARE = 0x2020;                  // После обновления частоты нужно определить форму сигнала
-const int TRIANGLE = 0x2002;                // и произвести запись в регистр.
- 
-const float refFreq = 25000000.0;           // Частота кристалла на плате AD9833
 
-#define Fdefine 300000
-long Fmin = 50000;
-long Fmax = 500000;
-#define Ftune 10000
-//int Ftune = 10000;
-unsigned int di = (Fmax-Fmin)/Ftune -1;
-long FFmax = 0;
-long freq = Fmin;
-long ifreq = Fdefine; // если не будет определена частота резонанса катушки, 
-                      // то она установится в это значение
-                      
-//int Ffinetune = 200;
-#define  Ffinetune 200
-  
-/*const int FSYNC = 10;                       // Standard SPI pins for the AD9833 waveform generator.
-const int CLK = 13;                         // CLK and DATA pins are shared with the TFT display.
-const int DATA = 11; 
-*/
-#define FSYNC 10
-#define CLK 13
-#define DATA 11
-#define KnobEncoder 5         // кнопка энкодера
+const int SINE = 0x2000;  // определяем значение регистров AD9833 в зависимости от формы сигнала
+// const int SQUARE = 0x2020;              // После обновления частоты нужно определить форму сигнала
+// const int TRIANGLE = 0x2002;            // и произвести запись в регистр.
+const float refFreq = 25000000.0;  // Частота кристалла на плате AD9833
 
- byte myClock = 0;
- byte SetClock = 5;
- byte flagClock = 0;
- byte myBuzzer = 0;
- unsigned long oldMillis = 0;
+long FREQ_MIN = 200000;  // 200kHz
+long FREQ_MAX = 500000;  // 500kHz
+long ifreq = FREQ_MIN;
+long freq = FREQ_MIN;
+const unsigned long freqSPI = 250000;
 
-/*
-const char toks[]PROGMEM  = "I = ";
-const char freqs[]PROGMEM  = "Freq = ";
-const char call[]PROGMEM  ="Generator AD9833";
-*/
- 
- /********* используемые подпрограммы выносим сюда *********/
- 
-/*******************ПИЩАЛКА ********************/
-void start_Buzzer(){
-     pinMode(PIN_ZUM,OUTPUT);
-     attachInterrupt(1, Buzzer, RISING );
-     analogWrite(pinINT1,0x80); //установим на пине частоту 
-                                //490 гц скважность 2
- }
+const unsigned long availableTimers[] = { oneMinute * 15, oneMinute * 30, oneMinute * 45, oneMinute * 60 };
+const byte maxTimers = 4;
+int timerPosition = 0;
+// по умолчанию 50% потенциометра
+int currentPotenciometrPercent = 50;
 
-void stop_Buzzer(){
-     detachInterrupt(1);
-     digitalWrite(PIN_ZUM,LOW);
- }
 
-void Buzzer(void){
-     static int i=490/zFreq;
-     if(!i--)
-     {
-    digitalWrite(PIN_ZUM, ! digitalRead(PIN_ZUM));
-    i=490/zFreq;
+#include <AD9833.h>  // Пробуем новую по ссылкам ниже
+// https://github.com/UA6EM/AD9833/tree/mpgsp
+// https://codeload.github.com/UA6EM/AD9833/zip/refs/heads/mpgsp
+
+//--------------- Create an AD9833 object ----------------
+//AD9833 AD(10, 11, 13);     // SW SPI over the HW SPI pins (UNO);
+AD9833 Ad9833(FNC_PIN);      // HW SPI Defaults to 25MHz internal reference frequency
+
+
+
+/********* используемые подпрограммы выносим сюда *********/
+
+/*** Обработчик кнопки энкодера ***/
+//------Cl_Btn----------------------
+enum { sbNONE = 0,
+       sbClick,
+       sbLong
+     }; /*состояние не изменилось/клик/долгое нажатие*/
+class Cl_Btn {
+  protected:
+    const byte pin;
+    byte state;
+    bool bounce = 0;
+    bool btn = 1, oldBtn;
+    unsigned long past;
+    const uint32_t time = 500;
+    bool flag = 0;
+    uint32_t past_flag = 0;
+  public:
+    Cl_Btn(byte p)
+      : pin(p) {}
+    /*инициализация-вставить в setup()*/
+    void init() {
+      pinMode(pin, INPUT_PULLUP);
+    }
+    /*работа-вставить в loop()*/
+    void run() {
+      state = sbNONE;
+      bool newBtn = digitalRead(pin);
+      if (!bounce && newBtn != btn) {
+        bounce = 1;
+        past = mill;
       }
-} 
+      if (bounce && mill - past >= 10) {
+        bounce = 0;
+        oldBtn = btn;
+        btn = newBtn;
+        if (!btn && oldBtn) {
+          flag = 1;
+          past_flag = mill;
+        }
+        if (!oldBtn && btn && flag && mill - past_flag < time) {
+          flag = 0;
+          state = sbClick;
+        }
+      }
+      if (flag && mill - past_flag >= time) {
+        flag = 0;
+        state = sbLong;
+      }
+    }
+    byte read() {
+      return state;
+    }
+};
 
-// ******************* Обработка AD9833 *********************** 
+Cl_Btn Btn1(PIN_ENCODER_BUTTON);  //Экземпляр обработчика для кнопки энкодера
+
+/******* Простой энкодер *******/
+#include <util/atomic.h>    // для атомарности чтения данных в прерываниях
+#include <RotaryEncoder.h>  // https://www.arduino.cc/reference/en/libraries/rotaryencoder/
+RotaryEncoder encoder(PIN_ENCODER1, PIN_ENCODER2);
+
+volatile int newEncoderPos;        // новая позиция энкодера
+static int currentEncoderPos = 0;  // текущая позиция энкодера
+/*** Обработчик прерывания для энкодера ***/
+ISR(PCINT2_vect) {
+  encoder.tick();
+}
+
+// функция выбора времени работы
+void setTimer() {
+  // если энкодер крутим по часовой
+  if (newEncoderPos - currentEncoderPos > 0) {
+    if (timerPosition == maxTimers - 1) {
+      timerPosition = 0;
+    } else {
+      timerPosition += 1;
+    }
+  } else if (newEncoderPos - currentEncoderPos < 0) {
+    // если энкодер крутим против часовой
+    if (timerPosition == 0) {
+      timerPosition = maxTimers - 1;
+    } else {
+      timerPosition -= 1;
+    }
+  }
+  memTimers = availableTimers[timerPosition];
+}
+
+void testMCP4151() {
+  //wiperValue = 1;
+  Serial.println("START Test MCP4151");
+  for (int i = 0; i < 128; i++) {
+    Potentiometer.writeValue(i);
+    delay(100);
+    Serial.print("MCP4151 = ");
+    Serial.println(i);
+  }
+
+  for (int j = 127; j >= 1; --j) {
+    Potentiometer.writeValue(j);
+    delay(100);
+    Serial.print("MCP4151 = ");
+    Serial.println(j);
+  }
+
+  Serial.println("STOP Test MCP4151");
+}
+
+
+
+void resetPotenciometer() {
+  // Понижаем сопротивление до 0%:
+  analogWrite(PIN_UD, 0);          // выбираем понижение
+  digitalWrite(PIN_CS, LOW);       // выбираем потенциометр X9C
+  for (int i = 0; i < 100; i++) {  // т.к. потенциометр имеет 100 доступных позиций
+    analogWrite(PIN_INC, 0);
+    delayMicroseconds(1);
+    analogWrite(PIN_INC, 255);
+    delayMicroseconds(1);
+  }
+  digitalWrite(PIN_CS, HIGH); /* запоминаем значение и выходим из режима настройки */
+
+  // MCP4131
+  wiperValue = 1;
+  Potentiometer.writeValue(wiperValue);  // Set MCP4151 to position 1
+}
+
+// Уровень percent - от 0 до 100% от максимума.
+void setResistance(int percent) {
+  resetPotenciometer();
+
+  // Поднимаем сопротивление до нужного:
+  analogWrite(PIN_UD, 255);   // выбираем повышение
+  digitalWrite(PIN_CS, LOW);  // выбираем потенциометр X9C
+  for (int i = 0; i < percent; i++) {
+    analogWrite(PIN_INC, 0);
+    delayMicroseconds(1);
+    analogWrite(PIN_INC, 255);
+    delayMicroseconds(1);
+  }
+
+  digitalWrite(PIN_CS, HIGH); /* запоминаем значение и выходим из режима настройки */
+
+  for (int i = 0; i < percent; i++) {
+    wiperValue = i;
+  }
+  Potentiometer.writeValue(wiperValue);  // Set MCP4151
+}
+
+void processPotenciometr() {
+  // если энкодер крутим по часовой
+  if (newEncoderPos - currentEncoderPos > 0) {
+    if (currentPotenciometrPercent >= 100) {
+      currentPotenciometrPercent = 100;
+      wiperValue = 100;
+    } else {
+      currentPotenciometrPercent += 1;
+      wiperValue += 1;
+    }
+  } else if (newEncoderPos - currentEncoderPos < 0) {
+    // если энкодер крутим против часовой
+    if (currentPotenciometrPercent <= 1) {
+      currentPotenciometrPercent = 1;
+      wiperValue = 1;
+    } else {
+      currentPotenciometrPercent -= 1;
+      wiperValue -= 1;
+    }
+  }
+
+  setResistance(currentPotenciometrPercent);
+  Potentiometer.writeValue(wiperValue);  // Set MCP4131 to mid position
+  Serial.print("wiperValue = ");
+  Serial.println(wiperValue);
+}
+
+/*** Обработчик энкодера через ШИМ ***/
+void startEncoder() {
+  attachInterrupt(1, Encoder2, RISING);
+  analogWrite(PIN_ENCODER3, 0x80);  //установим на пине частоту
+  //490 гц скважность 2
+}
+void Encoder2(void) {  // процедура вызываемая прерыванием, пищим активным динамиком
+  encoder.tick();
+}
+
+/********* Таймер обратного отсчёта экспозиции **********/
+unsigned long setTimerLCD(unsigned long timlcd) {
+  if (millis() - timMillis >= 1000) {
+    timlcd = timlcd - 1000;
+    timMillis += 1000;
+  }
+  if (timlcd == 0) {
+    timlcd = oldmemTimers;
+    isWorkStarted = 0;
+    lcd.setCursor(0, 3);
+    lcd.print("     ЗАВЕРШЕНО!     ");
+    digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+    start_Buzzer();
+    delay(3000);
+    stop_Buzzer();
+    //AD9833reset();
+    //Ad9833.reset();
+  }
+  return timlcd;
+}
+/*******************ПИЩАЛКА ********************/
+void start_Buzzer() {
+  digitalWrite(PIN_ZUM, HIGH);
+}
+
+void stop_Buzzer() {
+  digitalWrite(PIN_ZUM, LOW);
+}
+
+
+
+
+// ******************* Обработка AD9833 ***********************
 // AD9833 documentation advises a 'Reset' on first applying power.
-void AD9833reset() {
+/*
+  void AD9833reset() {
   WriteRegister(0x100);   // Write '1' to AD9833 Control register bit D8.
-   delay(10);
- }
-  
-// Set the frequency and waveform registers in the AD9833.
-void AD9833setFrequency(long frequency, int Waveform) {
+  delay(10);
+  }
+
+  // Set the frequency and waveform registers in the AD9833.
+  void AD9833setFrequency(long frequency, int Waveform) {
   long FreqWord = (frequency * pow(2, 28)) / refFreq;
   int MSB = (int)((FreqWord & 0xFFFC000) >> 14);    //Only lower 14 bits are used for data
   int LSB = (int)(FreqWord & 0x3FFF);
-//Set control bits 15 ande 14 to 0 and 1, respectively, for frequency register 0
+  //Set control bits 15 ande 14 to 0 and 1, respectively, for frequency register 0
   LSB |= 0x4000;
   MSB |= 0x4000;
   WriteRegister(0x2100);
@@ -130,216 +377,205 @@ void AD9833setFrequency(long frequency, int Waveform) {
   WriteRegister(MSB);                  // Write upper 16 bits to AD9833 registers.
   WriteRegister(0xC000);               // Phase register
   WriteRegister(Waveform);             // Exit & Reset to SINE, SQUARE or TRIANGLE
- }
- 
-// *************************
-// Display and AD9833 use different SPI MODES so it has to be set for the AD9833 here.
- void WriteRegister(int dat) {
- SPI.setDataMode(SPI_MODE2);
- digitalWrite(FSYNC, LOW);           // Set FSYNC low before writing to AD9833 registers
- delayMicroseconds(10);              // Give AD9833 time to get ready to receive data.
- SPI.transfer(highByte(dat));        // Each AD9833 register is 32 bits wide and each 16
- SPI.transfer(lowByte(dat));         // bits has to be transferred as 2 x 8-bit bytes.
-  digitalWrite(FSYNC, HIGH);          //Write done. Set FSYNC high
+  }
+
+  // *************************
+  // Display and AD9833 use different SPI MODES so it has to be set for the AD9833 here.
+  void WriteRegister(int dat) {
+  SPI.setDataMode(SPI_MODE2);
+  digitalWrite(PIN_FSYNC, LOW);           // Set FSYNC low before writing to AD9833 registers
+  delayMicroseconds(10);              // Give AD9833 time to get ready to receive data.
+  SPI.transfer(highByte(dat));        // Each AD9833 register is 32 bits wide and each 16
+  SPI.transfer(lowByte(dat));         // bits has to be transferred as 2 x 8-bit bytes.
+  digitalWrite(PIN_FSYNC, HIGH);          //Write done. Set FSYNC high
+  }
+*/
+
+void /*long*/ readAnalogAndSetFreqInSetup() {
+  int maxValue = 0;
+  long freqWithMaxI = FREQ_MIN;
+  long freqIncrease = 1000;                                   // 1kHz
+  int iterations = (FREQ_MAX - FREQ_MIN) / freqIncrease - 1;  // (500000 - 200000) / 1000 - 1 = 199
+
+  for (int j = 1; j <= iterations; j++) {
+    // читаем значение аналогового входа
+    int tempValue = analogRead(CORRECT_PIN);
+    // если значение тока больше предыдущего, запоминаем это значение и текущую частоту
+    if (tempValue > maxValue) {
+      maxValue = tempValue;
+      freqWithMaxI = freq;
+    }
+    // увеличиваем частоту для дальнейшего измерения тока
+    freq = freq + freqIncrease;
+    if (freq > FREQ_MAX) {
+      freq = FREQ_MAX;
+    }
+    // подаём частоту на генератор
+    Ad9833.setFrequency((float)freq, 0);
+    delay(20);
+  }
+  ifreq = freqWithMaxI;
+  // подаём частоту на генератор
+  Ad9833.setFrequency((float)ifreq, 0);
+  prevReadAnalogTime = millis();
 }
 
-//**** Процедура грубой настройки частоты по максимальному току ***/
- void setFreq(){
- for (unsigned int i=1; i <= di; i++) {
-   // Data_ina219=ina219.getCurrent_mA();
-      Data_ina219=ina219.shuntCurrent() * 1000; 
-    if (Data_ina219 > imax){ imax=Data_ina219; ifreq = freq; } // Если значение больше, то запомнить
-    if (freq >=Fmax) {freq = Fmax;}
-     freq=freq+Ftune;
-     AD9833setFrequency(freq, SINE);
-     delay(20);
-    } 
- }
+/**** Подстройка частоты каждые 1-10 секунд относительно аналогового сигнала ***/
+void readAnalogAndSetFreqInLoop() {
+  unsigned long curr = millis();
 
-//*** Процедура тонкой настройки частоты по максимальному току ***/
- void setFFreq(){
-    for (int j=1; j <= 100; j++) {
-     //Data_ina219=ina219.getCurrent_mA();
-     Data_ina219=ina219.shuntCurrent() * 1000; 
-     if (Data_ina219 > imax){ imax=Data_ina219; ifreq = freq; } // Если значение больше, то запомнить
-     freq=freq+Ffinetune;
-     if (freq >=FFmax) {freq = FFmax;} 
-     AD9833setFrequency(freq, SINE);
-     delay(20);
-     //Data_ina219=ina219.getCurrent_mA();
-     //Data_ina219=ina219.shuntCurrent() * 1000; 
-    } 
- }
+  // если прошло N секунд с момента последней проверки
+  if (curr - prevReadAnalogTime > 1000 * 5) {  //выбор времени изменения частоты.1-10 сек.
+    long availableDiff = 5000;                 // 1kHz-10kHz разница частот
+    long freqIncrease = 500;                   // 100Hz-1kHz шаг увеличения частоты при сканировании
 
- void myDisplay(){
-   lcd.setCursor(2, 0);                  // 1 строка
-   lcd.print("Freq = ");
-   lcd.setCursor(9, 0);                   //1 строка 7 позиция
-   float freq_tic = ifreq/1000;
-   lcd.print(freq_tic,2);
-   lcd.print("kHz");
-   lcd.setCursor(2, 1);                  // 2 строка
-   lcd.print("I = ");
-// lcd.setCursor(7, 1);                  // 2 строка 7 позиция
-   lcd.print(Data_ina219);
-   lcd.print("ma");
-   lcd.print("    ");  // затираем хвост при смене числа значащих значений
-   lcd.setCursor(2, 2); 
-   lcd.print("Vpp = ");
-   lcd.print(Voltage_ina219,2);
-   lcd.print("V");
-   lcd.setCursor(2, 3); 
-   lcd.print("Generator AD9833");
- }
+    int iterations = (availableDiff * 2) / freqIncrease - 1;  // (10000 * 2) / 1000 - 1 = 19
 
-/****************** MOVING AVERAGE *************************/
-//Процедура рассчета скользящего среднего
+    long minimalFreq = ifreq - availableDiff;
+    if (minimalFreq < FREQ_MIN) {
+      minimalFreq = FREQ_MIN;
+    }
+    // подаём на генератор минимальную частоту из диапазона +-10кГц
+    Ad9833.setFrequency((float)minimalFreq, 0);
+    delay(20);
 
-void smooth(double *input, double *output, int n, int window)
-{
-   int i,j,z,k1,k2,hw;
-   double tmp;
-   if(fmod(window,2)==0) window++;
-   hw=(window-1)/2;
-   output[0]=input[0];
+    int maxValue = 0;
+    long freqWithMaxI = minimalFreq;
+    freq = minimalFreq;
 
-   for (i=1;i<n;i++){
-       tmp=0;
-       if(i<hw){
-           k1=0;
-           k2=2*i;
-           z=k2+1;
-       }
-       else if((i+hw)>(n-1)){
-           k1=i-n+i+1;
-           k2=n-1;
-           z=k2-k1+1;
-       }
-       else{
-           k1=i-hw;
-           k2=i+hw;
-           z=window;
-       }
+    for (int j = 1; j <= iterations; j++) {
+      // читаем значение аналогового входа
+      int tempValue = analogRead(CORRECT_PIN);
+      // если значение тока больше предыдущего, запоминаем это значение и текущую частоту
+      if (tempValue > maxValue) {
+        maxValue = tempValue;
+        freqWithMaxI = freq;
+      }
+      // увеличиваем частоту для дальнейшего измерения тока
+      freq = freq + freqIncrease;
+      if (freq > FREQ_MAX) {
+        freq = FREQ_MAX;
+      }
+      // подаём частоту на генератор
+      Ad9833.setFrequency((float)freq, 0);
+      delay(10);
+    }
 
-       for (j=k1;j<=k2;j++){
-           tmp=tmp+input[j];
-       }
-       output[i]=tmp/z;
-   }
-} //end-function
-
+    ifreq = freqWithMaxI;
+    Ad9833.setFrequency((float)ifreq, 0);
+    prevReadAnalogTime = millis();
+  }
+}
 
 //************************** SETUP *************************/
-void setup() { 
-  SPI.begin();
-  Serial.begin(115200);
-  pinMode(PIN_ZUM, OUTPUT);
-   pinMode(5, INPUT_PULLUP);
-    pinMode(6, INPUT_PULLUP);
-     pinMode(7, INPUT_PULLUP);
-  
-  dac.begin(0x62);                // I2C адрес MCP4725 (может работать на 
-                                  // частоте 400 кгц
-  dac.setVoltage(dVolume, true);  // выставим регулятор усиления в 0.8 вольт                                                                                  dac.setVoltage(dVolume, true);  // установить напряжение 0.8 вольт
-                                  // с запоминанием во флэше DAC
-                                  // будет выставлять при подаче питания
-  
- // lcd.init(); //для библиотеки V112
-  lcd.begin();
+void setup() {
+  lcd.begin();  // Зависит от версии библиотеки
+  //lcd.init();  // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
   lcd.backlight();
-  delay(10);   
-    
- // ina219.begin(0x40); //такая конфигурация конфликтует с дисплеем
- // ina219.begin();
- // ina219.setCalibration_16V_400mA(); 
- // ina219.setCalibration_32V_2A();  // Интересно, в библиотеку можно внести изменения
-  delay(10);                       // сделав свои параметры калибровки? надо 16V 2A
-
-  ina219.begin(0x44); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
-  ina219.configure(0, 2, 12, 12, 7); // 16S -8.51ms
- // monitor.configure(0, 2, 10, 10, 7); // 4S -2.13ms
- // monitor.configure(0, 2, 11, 11, 7); // 8S -4.26ms
- // monitor.configure(0, 2, 12, 12, 7); // 16S -8.51ms
- // monitor.configure(0, 2, 13, 13, 7); // 32S -17.02ms
- // monitor.configure(0, 2, 14, 14, 7); // 64S -34.05ms
- // monitor.configure(0, 2, 15, 15, 7);  // 128S - 68.10ms
- // monitor.configure(0, 2, 8, 8, 7);
-                           // range, gain, bus_adc, shunt_adc, mode
-                           // range = 1 (0-32V bus voltage range)
-                           // gain = 3 (1/8 gain - 320mV range)
-                           // bus adc = 3 (12-bit, single sample, 532uS conversion time)
-                           // shunt adc = 3 (12-bit, single sample, 532uS conversion time)
-                           // mode = 7 (continuous conversion)
-
-  ina219.calibrate(0.100, 0.32, 16, 3.2); 
-                // R_шунта, напряж_шунта, макcнапряж, максток
- 
-  
-  AD9833reset();                   // Ресет после включения питания
   delay(10);
-  AD9833setFrequency(freq, SINE);  // выставляем нижнюю частоту
-  //
-  setFreq();
+
+  // настройки потенциометра
+  // сначала настраиваем потенциометр
+  pinMode(PIN_CS, OUTPUT);
+  pinMode(PIN_INC, OUTPUT);
+  pinMode(PIN_UD, OUTPUT);
+  digitalWrite(PIN_CS, HIGH);  // X9C в режиме низкого потребления
+  analogWrite(PIN_INC, 255);
+  analogWrite(PIN_UD, 255);
+
+  delay(30);
+  // сбрасываем потенциометр в 0%
+  resetPotenciometer();
+  // после сброса устанавливаем значение по умолчанию
+  setResistance(currentPotenciometrPercent);
+
+  // ждем секунду после настройки потенциометра
+  delay(1000);
+
+  Btn1.init();
+  Serial.begin(115200);
+
+  pinMode(ON_OFF_CASCADE_PIN, OUTPUT);
+  pinMode(PIN_ZUM, OUTPUT);
+  pinMode(CORRECT_PIN, INPUT);
+
+  digitalWrite(PIN_ZUM, LOW);
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+
+  analogReference(INTERNAL);
+
+  ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
+  ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
+  ina219.calibrate(0.100, 0.32, 16, 3.2);
+
+  SPI.begin();
+  // This MUST be the first command after declaring the AD9833 object
+  Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
+  Ad9833.reset();              // Ресет после включения питания
+  Ad9833.setSPIspeed(freqSPI); // Частота SPI для AD9833 установлена 4 MHz
+  Ad9833.setWave(AD9833_OFF);  // Turn OFF the output
+  delay(10);
+  Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
+
+  // выставляем минимальную частоту для цикла определения максимального тока
+  Ad9833.setFrequency((float)FREQ_MIN, 0);
+
   Serial.print("freq=");
-  Serial.println(freq);
-  freq = ifreq-10000;
-  FFmax =ifreq +10000;
-  imax = 0;
-  AD9833setFrequency(freq, SINE); 
-  setFFreq();
-  Serial.print("ffreq=");
-  Serial.println(ifreq);
-  AD9833setFrequency(ifreq, SINE); // выставляем частоту максимального тока
- // Data_ina219=ina219.getCurrent_mA();
-  Data_ina219=ina219.shuntCurrent() * 1000; 
-  Voltage_ina219 = ina219.busVoltage();
-  myDisplay();
-  delay(1);
+  Serial.println(FREQ_MIN);
 
-  }    // Конец процедуры инициализации прибора
-  
- 
+  // Настраиваем частоту под катушку
+  readAnalogAndSetFreqInSetup();
+
+  Data_ina219 = ina219.shuntCurrent() * 1000;
+  myDisplay();
+  delay(1000);
+  PCICR |= (1 << PCIE2);  // инициализируем порты для энкодера
+  PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
+  startEncoder();
+
+  memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
+  testMCP4151();
+  wiperValue = 64;
+  Potentiometer.writeValue(wiperValue);  // Set MCP4131 to mid position
+}  //******** END SETUP ********//
+
+
 // *** ТЕЛО ПРОГРАММЫ ***
- 
 void loop() {
-  if(millis()-oldMillis >= interval && flagClock == 1){
-  myClock++;  //Подсчитываем прошедшие минуты
-  oldMillis=millis();
- }
- if(myClock == SetClock){
-  start_Buzzer();
-  flagClock = 0;
-  myClock = 0;
-  myBuzzer = 1;
- }
- if(myBuzzer==1 && !digitalRead(KnobEncoder)){
-  stop_Buzzer();
-  myBuzzer=0;
- }
- 
- // Data_ina219=ina219.getCurrent_mA();
-  Data_ina219=ina219.shuntCurrent() * 1000; 
-  Voltage_ina219 = ina219.busVoltage();
+  mill = millis();
+  Btn1.run();
+
+  if (Btn1.read() == sbLong) {
+    oldmemTimers = memTimers;
+    timMillis = millis();
+    isWorkStarted = 1;
+  }
+
+  if (mill - prevUpdateDataIna > 1000 * 2) {
+    Data_ina219 = ina219.shuntCurrent() * 1000;
+    prevUpdateDataIna = millis();
+  }
+
   myDisplay();
 
-   /*
-   Serial.println();
-   Serial.print("Напряжение = ");
-   Serial.println( Voltage_ina219,2);
-   Serial.print("Ток = ");
-   Serial.println(Data_ina219);
-   Serial.println();
-   */
-   if(digitalRead(6)==LOW){
-    dVolume = dVolume - 5;
-     dac.setVoltage(dVolume, true);
-      delay(200);
-   }
-   if(digitalRead(7)==LOW ||digitalRead(5)==LOW){
-    dVolume = dVolume + 5;
-     dac.setVoltage(dVolume, true);
-      delay(200);
-   }
-   
-   delay(200);
- } //END
+  if (isWorkStarted == 1) {
+    memTimers = setTimerLCD(memTimers);
+  }
+
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    newEncoderPos = encoder.getPosition();
+  }
+
+  // если значение экодера поменялось
+  if (currentEncoderPos != newEncoderPos) {
+    // если работа ещё не началась, то можем устанавливать время
+    if (isWorkStarted == 0) {
+      setTimer();
+    } else if (isWorkStarted == 1) {
+      // если работа ещё началась, то можем редактировать потенциометр
+      processPotenciometr();
+    }
+    currentEncoderPos = newEncoderPos;
+  }
+  readAnalogAndSetFreqInLoop();
+}
