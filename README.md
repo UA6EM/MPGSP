@@ -13,4 +13,4 @@
 ![](/doc/20240225_175326.jpg?raw=true)
 
 
-![](/doc/shematic_diagram.jpg?raw=true)
+![](/doc/shema.png?raw=true)
