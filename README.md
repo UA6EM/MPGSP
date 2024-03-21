@@ -12,4 +12,5 @@
 ![](/doc/20240225_175301.jpg?raw=true)
 ![](/doc/20240225_175326.jpg?raw=true)
 
-![](Schematic_schem.sch-3_2024-02-26.png?raw=true)
+
+![](/doc/shematic_diagram.jpg?raw=true)
