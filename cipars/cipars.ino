@@ -47,55 +47,36 @@ LiquidCrystal_I2C_Menu  lcd(0x3F, 16, 2); // https://tsibrov.blogspot.com/2020/0
 #include <LCD_1602_RUS.h>         // https://github.com/ssilver2007/LCD_1602_RUS
 LCD_1602_RUS lcd(0x3F, 16, 2);  // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
 //LCD_1602_RUS lcd(0x3F, 20, 4);
-/* */
 
-#define MCP4151MOD  // снять ремарки если используем библиотеку MCP4151(SPI у неё 16 битный)
+
 #include <Wire.h>
 #include <SPI.h>
 
-
-
-
-const int chipSelect = 4;  // Define chipselect pin for MCP4131 or MCP4151
-unsigned int wiperValue;   // variable to hold wipervalue for MCP4131 or MCP4151
-
+unsigned int wiperValue;  // variable to hold wipervalue for MCP4131 or MCP4151
+#define MCP4151MOD        // снять ремарки если используем библиотеку MCP4151(SPI у неё 16 битный)
 #ifndef MCP4151MOD
-#include <MCP4131.h>  // https://github.com/UA6EM/Arduino-MCP4131/tree/mpgsp
-
-MCP4131 Potentiometer(chipSelect);
+#include <MCP4131.h>      // https://github.com/UA6EM/Arduino-MCP4131/tree/mpgsp
+#define  CS_MCP 4         // Define chipselect pin for MCP4131
+MCP4131 Potentiometer(CS);
 #else
-#include <MCP4151.h>  // https://github.com/UA6EM/MCP4151/tree/mpgsp
+#include <MCP4151.h>      // https://github.com/UA6EM/MCP4151/tree/mpgsp
 #define  SCK   13
 #define  MOSI  11
 #define  MISO  12
-#define  CS    4
-//MCP4151 Potentiometer(chipSelect);
-MCP4151 Potentiometer(CS, MOSI, MISO, SCK, 4000000, 250000, SPI_MODE0);
+#define  CS_MCP 4         // Define chipselect pin for MCP4151
+MCP4151 Potentiometer(CS_MCP, MOSI, MISO, SCK, 4000000, 250000, SPI_MODE0);
 #endif
-/*
-
-*/
 
 #include "INA219.h"
 INA219 ina219;
 
-
-// PINS
-//      chipSelect = 4 MCP4151 (SPI)
-
-// SPI  SCK =  13
-//      MOSI = 11
-//      MISO = 12
-//      SS   = 10
-
 #define ON_OFF_CASCADE_PIN 5  // для выключения выходного каскада
 #define PIN_ENCODER1 6
 #define PIN_ENCODER2 7
-#define PIN_ENCODER3 3
+#define PIN_ENCODER3 3        // ШИМим пин, по прерыванию обрабатываем энкодер 
 #define PIN_ENCODER_BUTTON 8
 #define PIN_ZUM 9
-#define PIN_FSYNC 10
-#define FNC_PIN 10
+#define FNC_PIN 10            // Define chipselect pin for AD9833
 
 // пины потенциометра
 #define PIN_CS  A0
@@ -104,13 +85,8 @@ INA219 ina219;
 #define CORRECT_PIN A7  // пин для внешней корректировки частоты.
 
 
-#define zFreq 2  // делитель интервала - секунда/2
-
+#define zFreq 2           // делитель интервала - секунда/2
 unsigned int Data_ina219 = 0;
-
-const int SINE = 0x2000;  // определяем значение регистров AD9833 в зависимости от формы сигнала
-// const int SQUARE = 0x2020;              // После обновления частоты нужно определить форму сигнала
-// const int TRIANGLE = 0x2002;            // и произвести запись в регистр.
 const float refFreq = 25000000.0;  // Частота кристалла на плате AD9833
 
 long FREQ_MIN = 200000;  // 200kHz
@@ -317,10 +293,10 @@ void processPotenciometr() {
 /*** Обработчик энкодера через ШИМ ***/
 void startEncoder() {
   attachInterrupt(1, Encoder2, RISING);
-  analogWrite(PIN_ENCODER3, 0x80);  //установим на пине частоту
-  //490 гц скважность 2
+  analogWrite(PIN_ENCODER3, 0x80);  // установим на пине частоту 490 гц скважность 2
 }
-void Encoder2(void) {  // процедура вызываемая прерыванием, пищим активным динамиком
+
+void Encoder2(void) {               // процедура вызываемая прерыванием
   encoder.tick();
 }
 
@@ -344,6 +320,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
   }
   return timlcd;
 }
+
 /*******************ПИЩАЛКА ********************/
 void start_Buzzer() {
   digitalWrite(PIN_ZUM, HIGH);
@@ -354,42 +331,7 @@ void stop_Buzzer() {
 }
 
 
-
-
 // ******************* Обработка AD9833 ***********************
-// AD9833 documentation advises a 'Reset' on first applying power.
-/*
-  void AD9833reset() {
-  WriteRegister(0x100);   // Write '1' to AD9833 Control register bit D8.
-  delay(10);
-  }
-
-  // Set the frequency and waveform registers in the AD9833.
-  void AD9833setFrequency(long frequency, int Waveform) {
-  long FreqWord = (frequency * pow(2, 28)) / refFreq;
-  int MSB = (int)((FreqWord & 0xFFFC000) >> 14);    //Only lower 14 bits are used for data
-  int LSB = (int)(FreqWord & 0x3FFF);
-  //Set control bits 15 ande 14 to 0 and 1, respectively, for frequency register 0
-  LSB |= 0x4000;
-  MSB |= 0x4000;
-  WriteRegister(0x2100);
-  WriteRegister(LSB);                  // Write lower 16 bits to AD9833 registers
-  WriteRegister(MSB);                  // Write upper 16 bits to AD9833 registers.
-  WriteRegister(0xC000);               // Phase register
-  WriteRegister(Waveform);             // Exit & Reset to SINE, SQUARE or TRIANGLE
-  }
-
-  // *************************
-  // Display and AD9833 use different SPI MODES so it has to be set for the AD9833 here.
-  void WriteRegister(int dat) {
-  SPI.setDataMode(SPI_MODE2);
-  digitalWrite(PIN_FSYNC, LOW);           // Set FSYNC low before writing to AD9833 registers
-  delayMicroseconds(10);              // Give AD9833 time to get ready to receive data.
-  SPI.transfer(highByte(dat));        // Each AD9833 register is 32 bits wide and each 16
-  SPI.transfer(lowByte(dat));         // bits has to be transferred as 2 x 8-bit bytes.
-  digitalWrite(PIN_FSYNC, HIGH);          //Write done. Set FSYNC high
-  }
-*/
 
 void /*long*/ readAnalogAndSetFreqInSetup() {
   int maxValue = 0;
