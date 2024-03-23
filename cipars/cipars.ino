@@ -1,5 +1,6 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Определения
+#define DEBUG                          // Замаркировать если не нужны тесты 
 #define UA6EM                          // Замаркировать, если скетч для CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -14,7 +15,7 @@
 #define PIN_ZUM 9
 #define CORRECT_PIN A7                 // Пин для внешней корректировки частоты.
 
-#define AD9833_CS   10
+#define AD9833_CS   4
 #define AD9833_MOSI 2
 #define AD9833_MISO A1
 #define AD9833_SCK  A2
@@ -22,7 +23,7 @@
 #define  MCP41x1_SCK   13 // Define SCK pin for MCP4131 or MCP4151
 #define  MCP41x1_MOSI  11 // Define MOSI pin for MCP4131 or MCP4151
 #define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP4151
-#define  MCP41x1_CS     4 // Define chipselect pin for MCP4131 or MCP4151
+#define  MCP41x1_CS    10 // Define chipselect pin for MCP4131 or MCP4151
 /* 
 #define PPIN_CS  A0       //  Пины потенциометра
 #define PPIN_INC A1
@@ -55,6 +56,7 @@ const byte maxTimers = 4;
 int timerPosition = 0;
 volatile int newEncoderPos;            // Новая позиция энкодера
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
+volatile  int d_resis = 127;
 
 #ifndef UA6EM
 #define I2C_ADDR 0x27
@@ -74,7 +76,8 @@ LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 MCP4131 Potentiometer(MCP41x1_CS);
 #else
 #include <MCP4151.h>  // https://github.com/UA6EM/MCP4151/tree/mpgsp
-MCP4151 Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_MISO, MCP41x1_SCK, 4000000L, 250000L, SPI_MODE0);
+//MCP4151 Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_MISO, MCP41x1_SCK, 4000000L, 250000L, SPI_MODE0);
+MCP4151 Potentiometer(MCP41x1_CS);
 #endif
 
 #include "INA219.h"
@@ -181,9 +184,9 @@ void setTimer() {
 
 void testMCP4151() {
 #ifdef MCP4151MOD
-static  int d_resis = 255;
+d_resis = 255;
 #else
-static  int d_resis = 127;
+d_resis = 127;
 #endif
 
   Serial.println("START Test MCP4151");
@@ -220,9 +223,9 @@ void setResistance(int percent) {
 void processPotenciometr() {
   // если энкодер крутим по часовой
   if (newEncoderPos - currentEncoderPos > 0) {
-    if (currentPotenciometrPercent >= 100) {
-      currentPotenciometrPercent = 100;
-      wiperValue = 100;
+    if (currentPotenciometrPercent >= d_resis) {
+      currentPotenciometrPercent = d_resis;
+      wiperValue = d_resis;
     } else {
       currentPotenciometrPercent += 1;
       wiperValue += 1;
@@ -419,9 +422,12 @@ void setup() {
   startEncoder();
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
+#ifdef DEBUG  
   testMCP4151();
-  wiperValue = 64;
-  Potentiometer.writeValue(wiperValue);  // Set MCP4131 to mid position
+#endif  
+  wiperValue = d_resis/2;
+  //currentEncoderPos = wiperValue;
+  Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
 }  //******** END SETUP ********//
 
 
@@ -442,9 +448,11 @@ void loop() {
   if (isWorkStarted == 1) {
     memTimers = setTimerLCD(memTimers);
   }
+  
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     newEncoderPos = encoder.getPosition();
   }
+  
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
     // если работа ещё не началась, то можем устанавливать время
