@@ -10,7 +10,7 @@
  * D0 - RX
  * D1 - TX
  * D2 - AD9833_MOSI
- * D3 - PWM TIC.ENCODER
+ * D3 - PWM, tic.encoder()
  * D4 - AD9833_CS
  * D5 - LT1206_SHUTDOWN
  * D6 - ENC_DT
