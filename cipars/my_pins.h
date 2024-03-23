@@ -17,10 +17,10 @@
  * D7 - ENC_CLK
  * D8 - ENC_SW
  * D9 - BUZZER
- * D10 - MCP41x1_CS 
- * D11 - MCP41x1_MOSI MOSI
- * D12 - MCP41x1_MISO MISO
- * D13 - MCP41x1_SCK  SCK 
+ * D10 - MCP41x1_CS         CS
+ * D11 - MCP41x1_MOSI MOSI  SDI/SD 
+ * D12 - MCP41x1_MISO MISO  only shematic diagram to SDI/SD
+ * D13 - MCP41x1_SCK  SCK   SCK
  * 
  * D14 - A0
  * D15 - A1
