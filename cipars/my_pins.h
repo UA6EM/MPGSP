@@ -1,7 +1,7 @@
 /*
  * A0 -
- * A1 -AD9833_MISO 
- * A2 -AD9833_SCK
+ * A1 - AD9833_MISO 
+ * A2 - AD9833_SCK
  * A3 -
  * A4 - LCD1602/LCD2004  SDA
  * A5 - LCD1602/LCD2004  SCL
@@ -19,7 +19,7 @@
  * D9 - BUZZER
  * D10 - MCP41x1_CS 
  * D11 - MCP41x1_MOSI MOSI
- * D12 - MCP41x1_MISO             MISO
+ * D12 - MCP41x1_MISO MISO
  * D13 - MCP41x1_SCK  SCK
  * 
  * D14 - A0
