@@ -1,7 +1,7 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*  31.03.2024 - Добавлен режим цеппера, вход по короткому нажатию кнопки 
- *  25.02.2024 - Версия CIPARS
+/*  31.03.2024 - Добавлен режим цеппера, вход по короткому нажатию кнопки
+    25.02.2024 - Версия CIPARS
 
     06.05.2022
     - Переработал программу для 2-строчного экрана
@@ -479,35 +479,68 @@ void setZepper() {
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 473 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 473 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е  минуты");
   delay(120000);
   zepFreq = 395000;
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 395 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 395 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е  минуты");
   delay(120000);
   zepFreq = 403850;
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 403.85 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 403.85 KHz");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е  минуты");
   delay(120000);
   zepFreq = 397600;
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 397.6 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 397.6 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е  минуты");
   delay(120000);
 
   power = 127;  // Электроды, полная мощность
   setResistance(power);
-  
+
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F -  30 KHz    ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 7  минут");
   delay(420000);
   digitalWrite(ON_OFF_CASCADE_PIN, LOW);
   Serial.println("Перерыв 20 минут");
+  lcd.setCursor(0, 0);
+  lcd.print("F - KHz");
+  lcd.setCursor(0, 1);
+  lcd.print("Отдых 20 минут");
   delay(1200000);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SINE);
   Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F -  30 KHz     ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 7 минут");
   delay(420000);
   digitalWrite(ON_OFF_CASCADE_PIN, LOW);
   Serial.println("Сеанс окончен");
+  lcd.setCursor(0, 0);
+  lcd.print("Сеанс окончен   ");
+  lcd.setCursor(0, 1);
+  lcd.print("Выключите прибор");
 }
+
