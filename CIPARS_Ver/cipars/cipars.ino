@@ -1,20 +1,21 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*  25.02.2024 - Версия CIPARS
- *   
- *  06.05.2022 
- *  - Переработал программу для 2-строчного экрана
- *
- * 11.06.2022 
- *  - Во время работы отключил возможность крутить время
- *  - В меня при работе изменил Таймре на Т, добавил знак V
- *  - Добавил всем пинам имя
- *  - Определил пины для потенциометра ...
- *  - Добавил управление потенциометром с помощью энкодера
- *  
- * 03.07.2022
- *  - перенес инициализацию потенциометра в начало setup 
- */
+/*  31.03.2024 - Добавлен режим цеппера, вход по короткому нажатию кнопки 
+ *  25.02.2024 - Версия CIPARS
+
+    06.05.2022
+    - Переработал программу для 2-строчного экрана
+
+   11.06.2022
+    - Во время работы отключил возможность крутить время
+    - В меня при работе изменил Таймре на Т, добавил знак V
+    - Добавил всем пинам имя
+    - Определил пины для потенциометра ...
+    - Добавил управление потенциометром с помощью энкодера
+
+   03.07.2022
+    - перенес инициализацию потенциометра в начало setup
+*/
 #define SECONDS(x) ((x) * 1000UL)
 #define MINUTES(x)  (SECONDS(x) * 60UL)
 #define HOURS(x)  (MINUTES(x) * 60UL)
@@ -23,8 +24,8 @@
 unsigned long interval = MINUTES(1);
 unsigned long oneMinute = MINUTES(1);
 unsigned long timers = MINUTES(5); // время таймера 15, 30, 45 или 60 минут
-unsigned long memTimers=0; //здесь будем хранить установленное время таймера
-unsigned long oldmemTimers=0;
+unsigned long memTimers = 0; //здесь будем хранить установленное время таймера
+unsigned long oldmemTimers = 0;
 byte isWorkStarted = 0; // флаг запуска таймера
 
 unsigned long timMillis = 0;
@@ -39,7 +40,7 @@ unsigned long prevUpdateDataIna = 0; // для перерыва между об�
 
 #include <LCD_1602_RUS.h>      // https://github.com/ssilver2007/LCD_1602_RUS
 LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
-                               //  
+//
 #include "INA219.h"
 INA219 ina219;
 
@@ -50,12 +51,12 @@ INA219 ina219;
 #define PIN_ENCODER2 7
 #define PIN_ENCODER3 3
 #define PIN_ENCODER_BUTTON 8
-#define PIN_ZUM 9  
+#define PIN_ZUM 9
 #define PIN_FSYNC 10
 // пины потенциометра
-#define PIN_CS 4 
-#define PIN_INC A1 
-#define PIN_UD A2 
+#define PIN_CS 4
+#define PIN_INC A1
+#define PIN_UD A2
 
 #define zFreq 2     // делитель интервала - секунда/2
 
@@ -78,9 +79,9 @@ int timerPosition = 0;
 // по умолчанию 50% потенциометра
 int currentPotenciometrPercent = 50;
 
- /********* используемые подпрограммы выносим сюда *********/
+/********* используемые подпрограммы выносим сюда *********/
 
- /*** Обработчик кнопки энкодера ***/
+/*** Обработчик кнопки энкодера ***/
 //------Cl_Btn----------------------
 enum {sbNONE = 0, sbClick, sbLong}; /*состояние не изменилось/клик/долгое нажатие*/
 class Cl_Btn {
@@ -140,7 +141,9 @@ RotaryEncoder encoder(PIN_ENCODER1, PIN_ENCODER2);
 volatile int newEncoderPos; // новая позиция энкодера
 static int currentEncoderPos = 0; // текущая позиция энкодера
 /*** Обработчик прерывания для энкодера ***/
- ISR(PCINT2_vect) {encoder.tick();}
+ISR(PCINT2_vect) {
+  encoder.tick();
+}
 
 // функция выбора времени работы
 void setTimer() {
@@ -166,7 +169,7 @@ void resetPotenciometer() {
   // Понижаем сопротивление до 0%:
   analogWrite(PIN_UD, 0); // выбираем понижение
   digitalWrite(PIN_CS, LOW); // выбираем потенциометр X9C
-  for (int i=0; i<100; i++) { // т.к. потенциометр имеет 100 доступных позиций
+  for (int i = 0; i < 100; i++) { // т.к. потенциометр имеет 100 доступных позиций
     analogWrite(PIN_INC, 0);
     delayMicroseconds(1);
     analogWrite(PIN_INC, 255);
@@ -176,13 +179,13 @@ void resetPotenciometer() {
 }
 
 // Уровень percent - от 0 до 100% от максимума.
-void setResistance(int percent) { 
+void setResistance(int percent) {
   resetPotenciometer();
 
   // Поднимаем сопротивление до нужного:
   analogWrite(PIN_UD, 255); // выбираем повышение
   digitalWrite(PIN_CS, LOW); // выбираем потенциометр X9C
-  for (int i=0; i < percent; i++) {
+  for (int i = 0; i < percent; i++) {
     analogWrite(PIN_INC, 0);
     delayMicroseconds(1);
     analogWrite(PIN_INC, 255);
@@ -214,17 +217,17 @@ void processPotenciometr() {
 
 /*** Обработчик энкодера через ШИМ ***/
 void startEncoder() {
-     attachInterrupt(1, Encoder2, RISING );
-     analogWrite(PIN_ENCODER3, 0x80); //установим на пине частоту
-                                //490 гц скважность 2
+  attachInterrupt(1, Encoder2, RISING );
+  analogWrite(PIN_ENCODER3, 0x80); //установим на пине частоту
+  //490 гц скважность 2
 }
-void Encoder2(void){ // процедура вызываемая прерыванием, пищим активным динамиком
-     encoder.tick();
+void Encoder2(void) { // процедура вызываемая прерыванием, пищим активным динамиком
+  encoder.tick();
 }
 
- /********* Таймер обратного отсчёта экспозиции **********/
+/********* Таймер обратного отсчёта экспозиции **********/
 unsigned long  setTimerLCD(unsigned long timlcd) {
-  if (millis() - timMillis >=1000) {
+  if (millis() - timMillis >= 1000) {
     timlcd = timlcd - 1000;
     timMillis += 1000;
   }
@@ -243,19 +246,19 @@ unsigned long  setTimerLCD(unsigned long timlcd) {
 }
 /*******************ПИЩАЛКА ********************/
 void start_Buzzer() {
-    digitalWrite(PIN_ZUM, HIGH);
+  digitalWrite(PIN_ZUM, HIGH);
 }
 
 void stop_Buzzer() {
-    digitalWrite(PIN_ZUM, LOW);
+  digitalWrite(PIN_ZUM, LOW);
 }
 
 // ******************* Обработка AD9833 ***********************
 // AD9833 documentation advises a 'Reset' on first applying power.
 void AD9833reset() {
   WriteRegister(0x100);   // Write '1' to AD9833 Control register bit D8.
-   delay(10);
- }
+  delay(10);
+}
 
 // Set the frequency and waveform registers in the AD9833.
 void AD9833setFrequency(long frequency, int Waveform) {
@@ -287,7 +290,7 @@ long readAnalogAndSetFreqInSetup() {
   int maxValue = 0;
   long freqWithMaxI = FREQ_MIN;
   long freqIncrease = 1000; // 1kHz
-  int iterations = (FREQ_MAX-FREQ_MIN)/freqIncrease - 1; // (500000 - 200000) / 1000 - 1 = 199
+  int iterations = (FREQ_MAX - FREQ_MIN) / freqIncrease - 1; // (500000 - 200000) / 1000 - 1 = 199
 
   for (int j = 1; j <= iterations; j++) {
     // читаем значение аналогового входа
@@ -369,18 +372,18 @@ void setup() {
   pinMode(PIN_INC, OUTPUT);
   pinMode(PIN_UD, OUTPUT);
   digitalWrite(PIN_CS, HIGH);  // X9C в режиме низкого потребления
-  analogWrite(PIN_INC, 255); 
-  analogWrite(PIN_UD, 255); 
-  
+  analogWrite(PIN_INC, 255);
+  analogWrite(PIN_UD, 255);
+
   delay(30);
   // сбрасываем потенциометр в 0%
-  resetPotenciometer(); 
+  resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
   setResistance(currentPotenciometrPercent);
 
   // ждем секунду после настройки потенциометра
   delay(1000);
-  
+
   Btn1.init();
   SPI.begin();
   Serial.begin(115200);
@@ -394,8 +397,8 @@ void setup() {
 
   analogReference(INTERNAL);
 
- // lcd.begin();  // Зависит от версии библиотеки
-  lcd.init();     // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/ 
+  lcd.begin();  // Зависит от версии библиотеки
+  // lcd.init();     // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
   lcd.backlight();
   delay(10);
   ina219.begin(0x40); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
@@ -411,7 +414,7 @@ void setup() {
 
   readAnalogAndSetFreqInSetup();
 
-  Data_ina219=ina219.shuntCurrent() * 1000;
+  Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
   delay(1000);
   PCICR |= (1 << PCIE2); // инициализируем порты для энкодера
@@ -419,45 +422,92 @@ void setup() {
   startEncoder();
 
   memTimers = availableTimers[0]; // выставляем 15 минут по умолчанию
-}   
+}
 
 // *** ТЕЛО ПРОГРАММЫ ***
 void loop() {
-    mill = millis();
-    Btn1.run();
+  mill = millis();
+  Btn1.run();
 
-    if (Btn1.read() == sbLong){
-      oldmemTimers=memTimers;
-      timMillis = millis();
-      isWorkStarted = 1;
+  if (Btn1.read() == sbClick) {
+    Serial.println("Режим ZEPPER");
+    setZepper();
+  }
+
+  if (Btn1.read() == sbLong) {
+    oldmemTimers = memTimers;
+    timMillis = millis();
+    isWorkStarted = 1;
+  }
+
+  if (mill - prevUpdateDataIna > 1000 * 2) {
+    Data_ina219 = ina219.shuntCurrent() * 1000;
+    prevUpdateDataIna = millis();
+  }
+
+  myDisplay();
+
+  if (isWorkStarted == 1) {
+    memTimers = setTimerLCD(memTimers);
+  }
+
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+    newEncoderPos = encoder.getPosition();
+  }
+
+  // если значение экодера поменялось
+  if (currentEncoderPos != newEncoderPos) {
+    // если работа ещё не началась, то можем устанавливать время
+    if (isWorkStarted == 0) {
+      setTimer();
+    } else if (isWorkStarted == 1) {
+      // если работа ещё началась, то можем редактировать потенциометр
+      processPotenciometr();
     }
+    currentEncoderPos = newEncoderPos;
+  }
 
-    if (mill - prevUpdateDataIna > 1000 * 2) {
-      Data_ina219=ina219.shuntCurrent() * 1000;
-      prevUpdateDataIna = millis();
-    }
-    
-    myDisplay();
+  readAnalogAndSetFreqInLoop();
+}
 
-    if (isWorkStarted == 1) {
-      memTimers = setTimerLCD(memTimers);
-    }
+// Функция Цеппера
+void setZepper() {
+  int power = 64;   // Очки, половинная мощность
+  setResistance(power);
 
-    ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-      newEncoderPos = encoder.getPosition();
-    }
+  long zepFreq = 473000;
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 473 KHz");
+  delay(120000);
+  zepFreq = 395000;
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 395 KHz");
+  delay(120000);
+  zepFreq = 403850;
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 403.85 KHz");
+  delay(120000);
+  zepFreq = 397600;
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 397.6 KHz");
+  delay(120000);
 
-    // если значение экодера поменялось
-    if (currentEncoderPos != newEncoderPos) {
-      // если работа ещё не началась, то можем устанавливать время
-      if (isWorkStarted == 0) {
-        setTimer();
-      } else if (isWorkStarted == 1) {
-        // если работа ещё началась, то можем редактировать потенциометр
-        processPotenciometr();
-      }
-      currentEncoderPos = newEncoderPos;
-    }
-
-    readAnalogAndSetFreqInLoop();
- }
+  power = 127;  // Электроды, полная мощность
+  setResistance(power);
+  
+  zepFreq = 30000;
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 30 KHz");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Перерыв 20 минут");
+  delay(1200000);
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  zepFreq = 30000;
+  AD9833setFrequency(zepFreq, SINE);
+  Serial.println("Частота 30 KHz");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Сеанс окончен");
+}
