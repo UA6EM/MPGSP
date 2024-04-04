@@ -79,7 +79,7 @@ LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #include <Wire.h>
 #include <SPI.h>
 
-#include <MCP4xxxx.h>  // https://github.com/UA6EM/MCP4151/tree/mpgsp
+#include <MCP4xxxx.h>  // https://github.com/UA6EM/MCP4xxxx
 MCP4xxxx Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
 //MCP4xxxx Potentiometer(MCP41x1_CS);
 
