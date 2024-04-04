@@ -11,3 +11,5 @@
 ![](JPG/20240225_175326.jpg?raw=true)
 ## CIPARS_X9C shematic diagram
 ![](Schematic_schem.sch-3_2024-02-26.png?raw=true)
+## CIPARS_MCP4151 shematic diagram
+![](Schematic_MCP4151.png?raw=true)
