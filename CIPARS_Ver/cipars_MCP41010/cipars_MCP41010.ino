@@ -1,9 +1,9 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Скетч универсальный, может работать с потенциометрами MCP41010!
-// MCP41010 
+// MCP41010
 
 // Определения
-//#define DEBUG                          // Замаркировать если не нужны тесты 
+//#define DEBUG                          // Замаркировать если не нужны тесты
 #define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -309,12 +309,12 @@ void /*long*/ readAnalogAndSetFreqInSetup() {
       freq = FREQ_MAX;
     }
     // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
     delay(20);
   }
   ifreq = freqWithMaxI;
   // подаём частоту на генератор
-  Ad9833.setFrequency((float)ifreq, 0);
+  Ad9833.setFrequency((float)ifreq, AD9833_SINE);
   prevReadAnalogTime = millis();
 }
 
@@ -334,7 +334,7 @@ void readAnalogAndSetFreqInLoop() {
       minimalFreq = FREQ_MIN;
     }
     // подаём на генератор минимальную частоту из диапазона +-10кГц
-    Ad9833.setFrequency((float)minimalFreq, 0);
+    Ad9833.setFrequency((float)minimalFreq, AD9833_SINE);
     delay(20);
 
     int maxValue = 0;
@@ -355,11 +355,11 @@ void readAnalogAndSetFreqInLoop() {
         freq = FREQ_MAX;
       }
       // подаём частоту на генератор
-      Ad9833.setFrequency((float)freq, 0);
+      Ad9833.setFrequency((float)freq, AD9833_SINE);
       delay(10);
     }
     ifreq = freqWithMaxI;
-    Ad9833.setFrequency((float)ifreq, 0);
+    Ad9833.setFrequency((float)ifreq, AD9833_SINE);
     prevReadAnalogTime = millis();
   }
 }
@@ -438,10 +438,10 @@ void myDisplay() {
 void setup() {
   Serial.begin(115200);
   Serial.println("START");
-  
+
 #ifdef UA6EM
   lcd.begin();  // Зависит от версии библиотеки
-#else  
+#else
   lcd.init();   // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
 #endif
 
@@ -481,7 +481,7 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN, 0);
+  Ad9833.setFrequency((float)FREQ_MIN,AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
@@ -630,6 +630,7 @@ void setZepper() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
+  Ad9833.setFrequency(ifreq, AD9833_SINE);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
 }
 

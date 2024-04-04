@@ -318,12 +318,12 @@ void /*long*/ readAnalogAndSetFreqInSetup() {
       freq = FREQ_MAX;
     }
     // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
     delay(20);
   }
   ifreq = freqWithMaxI;
   // подаём частоту на генератор
-  Ad9833.setFrequency((float)ifreq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
   prevReadAnalogTime = millis();
 }
 
@@ -343,7 +343,7 @@ void readAnalogAndSetFreqInLoop() {
       minimalFreq = FREQ_MIN;
     }
     // подаём на генератор минимальную частоту из диапазона +-10кГц
-    Ad9833.setFrequency((float)minimalFreq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
     delay(20);
 
     int maxValue = 0;
@@ -364,11 +364,11 @@ void readAnalogAndSetFreqInLoop() {
         freq = FREQ_MAX;
       }
       // подаём частоту на генератор
-      Ad9833.setFrequency((float)freq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
       delay(10);
     }
     ifreq = freqWithMaxI;
-    Ad9833.setFrequency((float)ifreq, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
     prevReadAnalogTime = millis();
   }
 }
@@ -491,7 +491,7 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN, 0);
+    Ad9833.setFrequency((float)freq, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
