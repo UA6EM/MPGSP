@@ -1,4 +1,15 @@
 // Генератор для катушки Мишина на основе DDS AD9833 для ESP32 экран LCD
+/*
+ * Версия:
+ *  04.04.2024 - проверена работа экрана LCD
+ *  
+ *  используемые библиотеки:
+ *  AiEsp32RotaryEncoder.h - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
+ *  LiquidCrystal_I2C.h    - https://codeload.github.com/johnrickman/LiquidCrystal_I2C/zip/refs/heads/master
+ *  Ticker.h               - https://www.arduino.cc/reference/en/libraries/ticker/
+ *  MCP41xxxx.h            - https://github.com/UA6EM/MCP4xxxx
+ *  AD9833.h               - https://github.com/UA6EM/AD9833/tree/mpgsp
+ */
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
