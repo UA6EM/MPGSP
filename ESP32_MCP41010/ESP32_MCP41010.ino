@@ -669,35 +669,46 @@ void setZepper() {
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
 }
 
-
 /*
-   A0 - MCP41x1_CS       CS
-   A1 - AD9833_MOSI      AD9833_SDATA
-   A2 - AD9833_SCK       AD9833_SCLK
-   A3 - AD9833_CS        AD9833_FSYNC
-   A4 - LCD1602/LCD2004  SDA
-   A5 - LCD1602/LCD2004  SCL
-   A6 -
-   A7 - SENS_IMPLOSION
-   D0 - RX
-   D1 - TX
-   D2 - RELE ZEPPER
-   D3 - PWM, tic.encoder() (not connected)
-   D4 -
-   D5 - LT1206_SHUTDOWN
-   D6 - ENC_DT
-   D7 - ENC_CLK
-   D8 - ENC_SW
-   D9 - BUZZER
-   D10 -
-   D11 - MCP41x1_MOSI MOSI  SDI/SDO
-   D12 - MCP41x1_MISO MISO  only shematic diagram to SDI/SDO
-   D13 - MCP41x1_SCK  SCK   SCK
-
-   D14 - A0
-   D15 - A1
-   D16 - A2
-   D17 - A3
-   D18 - A4
-   D19 - A5
-*/
+ * G1 - TX
+ * G2 - PIN_RELE 2
+ * G3 - RX
+ * g4 -
+ * G5 - MCP41x1_CS    5            // Define chipselect pin for MCP41010
+ * G6 -
+ * G7 -
+ * G8 -
+ * G9 -
+ * G10 -
+ * G11 -
+ * G12 - AD9833_MISO 12
+ * G13 - AD9833_MOSI 13
+ * G14 - AD9833_SCK  14
+ * G15 - AD9833_CS   15
+ * G16 -
+ * G17 -
+ * G18 - MCP41x1_SCK   18           // Define SCK pin for MCP41010
+ * G19 - MCP41x1_MISO  19           // Define MISO pin for MCP4131 or MCP41010
+ * G20 -
+ * G21 - SDA // LCD, INA219
+ * G22 - SCK // LCD, INA219
+ * G23 - MCP41x1_MOSI   23          // Define MOSI pin for MCP4131 or MCP41010
+ * G24 -
+ * G25 - PIN_ENC_BUTTON 25
+ * G26 -
+ * G27 -
+ * G28 -
+ * G29 -
+ * G30 -
+ * G31 -
+ * G32 - ON_OFF_CASCADE_PIN
+ * G33 - PIN_ZUM 33
+ * G34 - ROTARY_ENCODER_A_PIN 34
+ * G35 - ROTARY_ENCODER_B_PIN 35
+ * G36 - ROTARY_ENCODER_BUTTON_PIN 36
+ * 
+ * G39 - CORRECT_PIN A3 (ADC3)  SENS_IMPLOSION
+ * 
+ * 
+ * 
+ */
