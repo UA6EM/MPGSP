@@ -1,7 +1,10 @@
 // Генератор для катушки Мишина на основе DDS AD9833
+// Скетч универсальный, может работать с потенциометрами
+// MCP4131 и MCP4151, используются разные библиотеки!!!
+
 // Определения
-#define DEBUG                          // Замаркировать если не нужны тесты 
-#define UA6EM                          // Замаркировать, если скетч для CIPARS
+//#define DEBUG                          // Замаркировать если не нужны тесты 
+#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -14,9 +17,10 @@
 #define PIN_ENC_BUTTON 8
 #define PIN_ZUM 9
 #define CORRECT_PIN A7                 // Пин для внешней корректировки частоты.
+#define PIN_RELE 2
 
 //AD9833
-//#define AD9833_MISO 
+//#define AD9833_MISO
 #define AD9833_MOSI A1
 #define AD9833_SCK  A2
 #define AD9833_CS   A3
@@ -54,7 +58,7 @@ long FREQ_MAX = 500000;                // 500kHz
 long ifreq = FREQ_MIN;
 long freq = FREQ_MIN;
 const unsigned long freqSPI = 250000;  // Частота только для HW SPI AD9833
-                                       // UNO SW SPI = 250kHz  
+// UNO SW SPI = 250kHz
 const unsigned long availableTimers[] = { oneMinute * 15, oneMinute * 30, oneMinute * 45, oneMinute * 60 };
 const byte maxTimers = 4;
 int timerPosition = 0;
@@ -68,7 +72,7 @@ volatile  int d_resis = 127;
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
 #else
 #define I2C_ADDR 0x3F
-#include <LCD_1602_RUS.h> 
+#include <LCD_1602_RUS.h>
 LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #endif
 
@@ -189,9 +193,9 @@ void setTimer() {
 
 void testMCP4151() {
 #ifdef MCP4151MOD
-d_resis = 255;
+  d_resis = 255;
 #else
-d_resis = 127;
+  d_resis = 127;
 #endif
 
   Serial.println("START Test MCP4151");
@@ -218,10 +222,10 @@ void resetPotenciometer() {
 
 // Уровень percent - от 0 до 100% от максимума.
 void setResistance(int percent) {
- // resetPotenciometer();
- // for (int i = 0; i < percent; i++) {
-    wiperValue = percent;;
- // }
+  // resetPotenciometer();
+  // for (int i = 0; i < percent; i++) {
+  wiperValue = percent;;
+  // }
   Potentiometer.writeValue(wiperValue);  // Set MCP4151
 }
 
@@ -255,8 +259,8 @@ void processPotenciometr() {
 void startEncoder() {
   attachInterrupt(1, Encoder2, RISING);
   analogWrite(PIN_ENCODER3, 0x80);  // Установим на пине частоту 490 гц скважность 2
- }
- 
+}
+
 void Encoder2(void) {               // Процедура вызываемая прерыванием (обрабатываем энкодер)
   encoder.tick();
 }
@@ -274,7 +278,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
 #ifdef UA6EM
     lcd.print("    СТОП!     ");
 #else
-     lcd.print("    STOP!     ");
+    lcd.print("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
@@ -444,9 +448,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println("START");
 
-#ifdef MCP4151MOD  
+#ifdef MCP4151MOD
   lcd.begin();  // Зависит от версии библиотеки
-//   lcd.init();
+  //   lcd.init();
 #else
   lcd.init();   // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
 #endif
@@ -503,10 +507,10 @@ void setup() {
   startEncoder();
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
-#ifdef DEBUG  
+#ifdef DEBUG
   testMCP4151();
-#endif  
-  wiperValue = d_resis/2;
+#endif
+  wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
 }  //******** END SETUP ********//
@@ -516,6 +520,12 @@ void setup() {
 void loop() {
   mill = millis();
   Btn1.run();
+
+  if (Btn1.read() == sbClick) {
+    Serial.println("Режим ZEPPER");
+    setZepper();
+  }
+
   if (Btn1.read() == sbLong) {
     oldmemTimers = memTimers;
     timMillis = millis();
@@ -529,11 +539,11 @@ void loop() {
   if (isWorkStarted == 1) {
     memTimers = setTimerLCD(memTimers);
   }
-  
+
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     newEncoderPos = encoder.getPosition();
   }
-  
+
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
     // если работа ещё не началась, то можем устанавливать время
@@ -548,36 +558,120 @@ void loop() {
   readAnalogAndSetFreqInLoop();
 }
 
-/*
- * A0 - MCP41x1_CS       CS
- * A1 - AD9833_MOSI      AD9833_SDATA
- * A2 - AD9833_SCK       AD9833_SCLK
- * A3 - AD9833_CS        AD9833_FSYNC
- * A4 - LCD1602/LCD2004  SDA
- * A5 - LCD1602/LCD2004  SCL
- * A6 -
- * A7 - SENS_IMPLOSION
- * D0 - RX
- * D1 - TX
- * D2 - 
- * D3 - PWM, tic.encoder() (not connected)
- * D4 - 
- * D5 - LT1206_SHUTDOWN
- * D6 - ENC_DT
- * D7 - ENC_CLK
- * D8 - ENC_SW
- * D9 - BUZZER
- * D10 -
- * D11 - MCP41x1_MOSI MOSI  SDI/SDO
- * D12 - MCP41x1_MISO MISO  only shematic diagram to SDI/SDO
- * D13 - MCP41x1_SCK  SCK   SCK
- * 
- * D14 - A0
- * D15 - A1
- * D16 - A2
- * D17 - A3
- * D18 - A4
- * D19 - A5
- */
 
- 
+// ************* Функция Цеппера *************
+void setZepper() {
+  pinMode(PIN_RELE, OUTPUT);
+  int power = 5;   // Очки, половинная мощность (5 вольт)
+  setResistance(map(power, 0, 12, 0, 100));
+  Serial.print("U = ");
+  Serial.println(map(power, 0, 12, 0, 100));
+
+  long zepFreq = 473000;
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 473 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 473 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("ЖдёM 2-е Mинуты");
+  delay(120000);
+  zepFreq = 395000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 395 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 395 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 403850;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 403.85 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 403.85 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 397600;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 397.6 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print(" F - 397.6 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+
+  power = 127;  // Электроды, полная мощность
+  setResistance(power);
+  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
+
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Перерыв 20 минут");
+  lcd.setCursor(0, 0);
+  lcd.print("     IS OFF     ");
+  lcd.setCursor(0, 1);
+  lcd.print(" Отдых 20 минут ");
+  delay(1200000);
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Сеанс окончен");
+  lcd.setCursor(0, 0);
+  lcd.print(" Сеанс окончен  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Выключите прибор");
+  delay(5000);
+  lcd.setCursor(0, 0);
+  lcd.print("                ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+}
+
+
+/*
+   A0 - MCP41x1_CS       CS
+   A1 - AD9833_MOSI      AD9833_SDATA
+   A2 - AD9833_SCK       AD9833_SCLK
+   A3 - AD9833_CS        AD9833_FSYNC
+   A4 - LCD1602/LCD2004  SDA
+   A5 - LCD1602/LCD2004  SCL
+   A6 -
+   A7 - SENS_IMPLOSION
+   D0 - RX
+   D1 - TX
+   D2 - RELE ZEPPER
+   D3 - PWM, tic.encoder() (not connected)
+   D4 -
+   D5 - LT1206_SHUTDOWN
+   D6 - ENC_DT
+   D7 - ENC_CLK
+   D8 - ENC_SW
+   D9 - BUZZER
+   D10 -
+   D11 - MCP41x1_MOSI MOSI  SDI/SDO
+   D12 - MCP41x1_MISO MISO  only shematic diagram to SDI/SDO
+   D13 - MCP41x1_SCK  SCK   SCK
+
+   D14 - A0
+   D15 - A1
+   D16 - A2
+   D17 - A3
+   D18 - A4
+   D19 - A5
+*/

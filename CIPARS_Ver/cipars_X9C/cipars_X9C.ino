@@ -1,7 +1,10 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*  03.04.2024 - Для цеппера выствлен режим сигнала Меандр
- *  31.03.2024 - Добавлен режим цеппера, вход по короткому нажатию кнопки
+/*  04.04.2024 - Версия консолидированная для Гитхаба
+    https://github.com/UA6EM/MPGSP/tree/master/CIPARS_Ver/cipars_X9C
+
+    03.04.2024 - Для цеппера выствлен режим сигнала Меандр
+    31.03.2024 - Добавлен режим цеппера, вход по короткому нажатию кнопки
     25.02.2024 - Версия CIPARS для потенциометра  X9C, управление AD9833 напрямую
 
     06.05.2022
@@ -54,6 +57,8 @@ INA219 ina219;
 #define PIN_ENCODER_BUTTON 8
 #define PIN_ZUM 9
 #define PIN_FSYNC 10
+#define PIN_RELE 2
+
 // пины потенциометра
 #define PIN_CS 4
 #define PIN_INC A1
@@ -468,16 +473,17 @@ void loop() {
     currentEncoderPos = newEncoderPos;
   }
   readAnalogAndSetFreqInLoop();
-  
+
 } // *********** E N D  L O O P **************
 
 
 // ************* Функция Цеппера *************
 void setZepper() {
+  pinMode(PIN_RELE, OUTPUT);
   int power = 5;   // Очки, половинная мощность (5 вольт)
-  setResistance(map(power,0,12,0,100));
+  setResistance(map(power, 0, 12, 0, 100));
   Serial.print("U = ");
-  Serial.println(map(power,0,12,0,100));
+  Serial.println(map(power, 0, 12, 0, 100));
 
   long zepFreq = 473000;
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
@@ -515,7 +521,7 @@ void setZepper() {
 
   power = 127;  // Электроды, полная мощность
   setResistance(power);
-
+  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 30 KHz");
@@ -551,4 +557,5 @@ void setZepper() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
+  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
 }
