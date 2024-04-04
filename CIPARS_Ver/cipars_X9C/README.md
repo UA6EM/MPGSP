@@ -1,4 +1,4 @@
 # Генератор с потенциометром X9C
 ## Первоначальная схема генератора
-![](../JPG/Schematic_schem.sch-3_2024-02-26.png?raw=true)
+![](../Schematic_schem.sch-3_2024-02-26.png?raw=true)
 
