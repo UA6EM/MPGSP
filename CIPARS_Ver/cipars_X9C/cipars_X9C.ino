@@ -42,8 +42,19 @@ unsigned long prevUpdateDataIna = 0; // для перерыва между об�
 #include <Wire.h>
 #include <SPI.h>
 
-#include <LCD_1602_RUS.h>      // https://github.com/ssilver2007/LCD_1602_RUS
+#define LCD_RUS                // Замаркировать если не LCD_RUS вывод на дисплей
+#ifdef LCD_RUS                 // Для использования русской кодировки дисплея LCD
+#include <LCD_1602_RUS.h>      // https://github.com/UA6EM/LCD_1602_RUS (исправлена под ESP32)
 LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
+#else
+// здесь может быть код для вашего дисплея, для этого:
+// добавьте ваш код для LCD в файле display.ino и в функции zepper()
+
+#define I2C_ADDR 0x3F //0x27
+#include <LiquidCrystal_I2C.h>
+//LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
+LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
+#endif
 //
 #include "INA219.h"
 INA219 ina219;
@@ -403,8 +414,8 @@ void setup() {
 
   analogReference(INTERNAL);
 
-  lcd.begin();  // Зависит от версии библиотеки
-  // lcd.init();     // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
+  lcd.begin();       // Зависит от версии библиотеки
+  // lcd.init();   
   lcd.backlight();
   delay(10);
   ina219.begin(0x40); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
@@ -475,6 +486,7 @@ void loop() {
   readAnalogAndSetFreqInLoop();
 
 } // *********** E N D  L O O P **************
+
 
 
 // ************* Функция Цеппера *************
