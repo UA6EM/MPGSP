@@ -14,7 +14,7 @@
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
-#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
+//#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -479,11 +479,9 @@ void setup() {
   Serial.begin(115200);
   Serial.println("START");
 
-#ifndef UA6EM
-  lcd.begin();  // Зависит от версии библиотеки
-#else
-  lcd.init();   // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
-#endif
+ // lcd.begin();  // Зависит от версии библиотеки
+  lcd.init();     // 
+
 
   lcd.backlight();
   delay(1000);

@@ -4,7 +4,7 @@
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты 
-#define LCD_RUS                          // Замаркировать, если скетч для LCD_RUS
+//#define LCD_RUS                          // Замаркировать, если скетч для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -449,8 +449,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println("START");
 
-  lcd.begin();    // Зависит от версии библиотеки
-  //lcd.init();
+  //lcd.begin();    // Зависит от версии библиотеки
+  lcd.init();
 
   lcd.backlight();
   delay(1000);
