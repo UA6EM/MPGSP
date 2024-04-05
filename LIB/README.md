@@ -14,6 +14,7 @@
 ## Ссылки для установки ядер (аддонов)
 * https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
 * https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+* https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
   
 
 
