@@ -3,7 +3,7 @@
 // 05.04.2024 - опробована работа дисплея, исправлена библиотека LCD_1602_RUS.h
 //              и библиотека  LiquidCrystal_I2C.h
 //              кнопка переключения режимов работы отрабатывает штатно
- 
+
 
 // Определения
 #define DEBUG                          // Замаркировать если не нужны тесты
@@ -14,13 +14,13 @@
 #define DAYS(x) (HOURS(x) * 24UL)
 #define WEEKS(x) (DAYS(x) * 7UL)
 #define ON_OFF_CASCADE_PIN 10          // Для выключения выходного каскада
-#define PIN_ENCODER1 6
-#define PIN_ENCODER2 7
-#define PIN_ENCODER3 3                 // Шимится, по прерыванию обрабатывается энкодер
+#define PIN_ENCODER1 2
+#define PIN_ENCODER2 3
+#define PIN_ENCODER3 6                 // Шимится, по прерыванию обрабатывается энкодер
 #define PIN_ENC_BUTTON 8
 #define PIN_ZUM 9
 #define CORRECT_PIN A0                 // Пин для внешней корректировки частоты.
-#define PIN_RELE 2
+#define PIN_RELE 7
 
 //AD9833
 //#define AD9833_MISO
@@ -32,8 +32,8 @@
 #define I2C_SDA     4    // LCD1602 SDA
 #define I2C_SCK     5    // LCD1602 SCK
 /*
-#define PIN_WIRE0_SDA  (4u)
-#define PIN_WIRE0_SCL  (5u)
+  #define PIN_WIRE0_SDA  (4u)
+  #define PIN_WIRE0_SCL  (5u)
 */
 //MCP41010
 #define  MCP41x1_SCK   18 // Define SCK pin for MCP4131 or MCP4151
@@ -41,11 +41,11 @@
 #define  MCP41x1_MISO  16 // Define MISO pin for MCP4131 or MCP4151
 #define  MCP41x1_CS    17 // Define chipselect pin for MCP4131 or MCP4151
 /*
-// SPI
-#define PIN_SPI0_MISO  (16u)
-#define PIN_SPI0_MOSI  (19u)
-#define PIN_SPI0_SCK   (18u)
-#define PIN_SPI0_SS    (17u)
+  // SPI
+  #define PIN_SPI0_MISO  (16u)
+  #define PIN_SPI0_MOSI  (19u)
+  #define PIN_SPI0_SCK   (18u)
+  #define PIN_SPI0_SS    (17u)
 */
 #define zFreq 2           // Делитель интервала - секунда/2
 
@@ -81,7 +81,7 @@ volatile  int d_resis = 127;
 #ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(I2C_ADDR, /*20, 4*/16,2);
+LiquidCrystal_I2C lcd(I2C_ADDR, /*20, 4*/16, 2);
 #else
 #define I2C_ADDR 0x3F
 #include <LCD_1602_RUS.h>
@@ -169,15 +169,9 @@ class Cl_Btn {
 Cl_Btn Btn1(PIN_ENC_BUTTON);   //Экземпляр обработчика для кнопки энкодера
 
 /******* Простой энкодер *******/
-//#include <util/atomic.h>    // для атомарности чтения данных в прерываниях
-#include <RotaryEncoder.h>    // https://www.arduino.cc/reference/en/libraries/rotaryencoder/
-RotaryEncoder encoder(PIN_ENCODER1, PIN_ENCODER2);
+#include "pio_encoder.h"
+PioEncoder encoder(PIN_ENCODER1); // encoder is connected to GPIO2 and GPIO3
 
-/*** Обработчик прерывания для энкодера ***
-ISR(PCINT2_vect) {
-  encoder.tick();
-}
-*/
 
 // функция выбора времени работы
 void setTimer() {
@@ -450,11 +444,11 @@ void myDisplay() {
 //************************** SETUP *************************/
 void setup() {
   Serial.begin(115200);
+  while (!Serial);
   Serial.println("START");
 
   //lcd.begin();    // Зависит от версии библиотеки
- lcd.init();   // 
-
+  lcd.init();   //
   lcd.backlight();
   delay(1000);
 
@@ -465,7 +459,8 @@ void setup() {
 
   // ждем секунду после настройки потенциометра
   delay(1000);
-
+  
+  encoder.begin();  // Настроить энкодер
   Btn1.init();
 
   pinMode(ON_OFF_CASCADE_PIN, OUTPUT);
@@ -475,7 +470,7 @@ void setup() {
   digitalWrite(PIN_ZUM, LOW);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
 
- // analogReference(INTERNAL);
+  // analogReference(INTERNAL);
 
   ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
@@ -491,7 +486,7 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN,AD9833_SINE);
+  Ad9833.setFrequency((float)FREQ_MIN, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
@@ -502,8 +497,8 @@ void setup() {
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
   delay(1000);
-//  PCICR |= (1 << PCIE2);  // инициализируем порты для энкодера
-//  PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
+  //  PCICR |= (1 << PCIE2);  // инициализируем порты для энкодера
+  //  PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
   startEncoder();
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
@@ -540,9 +535,9 @@ void loop() {
     memTimers = setTimerLCD(memTimers);
   }
 
-//  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-    newEncoderPos = encoder.getPosition();
-//  }
+
+  newEncoderPos = encoder.getCount(); //encoder.getPosition();
+
 
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
