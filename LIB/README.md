@@ -19,6 +19,7 @@
 * https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
 * https://github.com/earlephilhower/arduino-pico-littlefs-plugin/releases/download/0.2.0/PicoLittleFS-0.2.0.zip
 * https://github.com/earlephilhower/arduino-littlefs-upload
+* https://github.com/lorol/arduino-esp32fs-plugin
 
 
   
