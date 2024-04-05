@@ -9,5 +9,6 @@
 * https://codeload.github.com/UA6EM/LCD_1602_RUS/zip/refs/heads/master
 * https://codeload.github.com/UA6EM/LiquidCrystal_I2C/zip/refs/heads/master
 * https://downloads.arduino.cc/libraries/github.com/igorantolic/Ai_Esp32_Rotary_Encoder-1.6.0.zip
+* https://codeload.github.com/mathertel/RotaryEncoder/zip/refs/heads/master
 
 
