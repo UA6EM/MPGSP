@@ -12,6 +12,7 @@
 * https://codeload.github.com/mathertel/RotaryEncoder/zip/refs/heads/master
 * https://codeload.github.com/gbr1/rp2040-encoder-library/zip/refs/heads/main???
 * https://codeload.github.com/siara-cc/esp32_arduino_sqlite3_lib/zip/refs/tags/2.4
+* https://github.com/Bodmer/TFT_eSPI
 * 
 
 ## Ссылки для установки ядер (аддонов)
