@@ -6,6 +6,7 @@
  *  используемые библиотеки:
  *  AiEsp32RotaryEncoder.h - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
  *  LiquidCrystal_I2C.h    - https://codeload.github.com/johnrickman/LiquidCrystal_I2C/zip/refs/heads/master
+ *  
  *  Ticker.h               - https://www.arduino.cc/reference/en/libraries/ticker/
  *  MCP41xxxx.h            - https://github.com/UA6EM/MCP4xxxx
  *  AD9833.h               - https://github.com/UA6EM/AD9833/tree/mpgsp
@@ -13,7 +14,7 @@
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
-//#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
+#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -478,7 +479,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println("START");
 
-#ifdef UA6EM
+#ifndef UA6EM
   lcd.begin();  // Зависит от версии библиотеки
 #else
   lcd.init();   // https://www.arduino.cc/reference/en/libraries/liquidcrystal-i2c/
@@ -548,7 +549,11 @@ void loop() {
 
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
+#ifdef UA6EM    
+    setZepper1();
+#else
     setZepper();
+#endif    
   }
 
   if (Btn1.read() == sbLong) {
@@ -668,6 +673,94 @@ void setZepper() {
   Ad9833.setFrequency(ifreq, AD9833_SINE);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
 }
+
+
+
+// ************* Функция Цеппера 1 *************
+void setZepper1() {
+  pinMode(PIN_RELE, OUTPUT);
+  int power = 5;   // Очки, половинная мощность (5 вольт)
+  setResistance(map(power, 0, 12, 0, 100));
+  Serial.print("U = ");
+  Serial.println(map(power, 0, 12, 0, 100));
+
+  long zepFreq = 473000;
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 473 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 473 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("ЖдёM 2-е Mинуты");
+  delay(120000);
+  zepFreq = 395000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 395 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 395 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 403850;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 403.85 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("F - 403.85 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 397600;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 397.6 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print(" F - 397.6 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+
+  power = 127;  // Электроды, полная мощность
+  setResistance(power);
+  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
+
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Перерыв 20 минут");
+  lcd.setCursor(0, 0);
+  lcd.print("     IS OFF     ");
+  lcd.setCursor(0, 1);
+  lcd.print(" Отдых 20 минут ");
+  delay(1200000);
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Сеанс окончен");
+  lcd.setCursor(0, 0);
+  lcd.print(" Сеанс окончен  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Выключите прибор");
+  delay(5000);
+  lcd.setCursor(0, 0);
+  lcd.print("                ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  Ad9833.setFrequency(ifreq, AD9833_SINE);
+  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+}
+
 
 /*
  * G1 - TX
