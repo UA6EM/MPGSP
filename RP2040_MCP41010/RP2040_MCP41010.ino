@@ -253,15 +253,6 @@ void processPotenciometr() {
   Serial.println(wiperValue);
 }
 
-/*** Обработчик энкодера через ШИМ ***/
-void startEncoder() {
-  attachInterrupt(1, Encoder2, RISING);
-  analogWrite(PIN_ENCODER3, 0x80);  // Установим на пине частоту 490 гц скважность 2
-}
-
-void Encoder2(void) {               // Процедура вызываемая прерыванием (обрабатываем энкодер)
-  encoder.tick();
-}
 
 /********* Таймер обратного отсчёта экспозиции **********/
 unsigned long setTimerLCD(unsigned long timlcd) {
@@ -497,9 +488,6 @@ void setup() {
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
   delay(1000);
-  //  PCICR |= (1 << PCIE2);  // инициализируем порты для энкодера
-  //  PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
-  startEncoder();
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
 #ifdef DEBUG
