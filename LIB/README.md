@@ -17,6 +17,9 @@
 * https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
 * https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 * https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+* https://github.com/earlephilhower/arduino-pico-littlefs-plugin/releases/download/0.2.0/PicoLittleFS-0.2.0.zip
+
+
   
 
 
