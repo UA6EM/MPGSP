@@ -1,16 +1,17 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Скетч универсальный, может работать с потенциометрами MCP41010!
-// MCP41010
+// 05.04.2024 - опробована работа дисплея, исправлена библиотека LCD_1602_RUS.h
+ 
 
 // Определения
 #define DEBUG                          // Замаркировать если не нужны тесты
-#define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
+#define LCD_RUS                        // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
 #define DAYS(x) (HOURS(x) * 24UL)
 #define WEEKS(x) (DAYS(x) * 7UL)
-#define ON_OFF_CASCADE_PIN 10           // Для выключения выходного каскада
+#define ON_OFF_CASCADE_PIN 10          // Для выключения выходного каскада
 #define PIN_ENCODER1 6
 #define PIN_ENCODER2 7
 #define PIN_ENCODER3 3                 // Шимится, по прерыванию обрабатывается энкодер

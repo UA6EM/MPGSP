@@ -14,7 +14,7 @@
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
-//#define UA6EM                          // Замаркировать, если скетч для пользователя CIPARS
+#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -92,7 +92,7 @@ volatile int newEncoderPos;            // Новая позиция энкоде
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
 volatile  int d_resis = 127;
 
-#ifndef UA6EM
+#ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
@@ -306,7 +306,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
     lcd.setCursor(0, 3);
-#ifdef UA6EM
+#ifdef LCD_RUS
     lcd.print("    СТОП!     ");
 #else
     lcd.print("    STOP!     ");
@@ -409,20 +409,20 @@ void myDisplay() {
   // 1 строка
   lcd.setCursor(0, 0);
   if (!isWorkStarted) {
-#ifdef UA6EM
+#ifdef LCD_RUS
     lcd.print("Время-");
 #else
     lcd.print("Times-");
 #endif
     lcd.print(memTimers / 60000);
     if (memTimers / 60000 > 0) {
-#ifdef UA6EM
+#ifdef LCD_RUS
       lcd.print(" мин. ");
 #else
       lcd.print(" min. ");
 #endif
     } else {
-#ifdef UA6EM
+#ifdef LCD_RUS
       lcd.print("0 мин. ");
 #else
       lcd.print("0 min. ");
@@ -433,7 +433,7 @@ void myDisplay() {
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
       lcd.print(memTimers / 1000 / 60);
-#ifdef UA6EM
+#ifdef LCD_RUS
       lcd.print("мин.");
 #else
       lcd.print("min.");
@@ -441,7 +441,7 @@ void myDisplay() {
     } else {
       // если меньше минуты, то показываем секунды
       lcd.print(memTimers / 1000);
-#ifdef UA6EM
+#ifdef LCD_RUS
       lcd.print("сек.");
 #else
       lcd.print("sek.");
@@ -547,7 +547,7 @@ void loop() {
 
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
-#ifdef UA6EM    
+#ifdef LCD_RUS    
     setZepper1();
 #else
     setZepper();
