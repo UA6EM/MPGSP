@@ -1,5 +1,5 @@
 # Каталог используемых библиотек
-## В разработке
+## Ссылки для скачивания
 
 * https://codeload.github.com/UA6EM/MCP4151/zip/refs/heads/mpgsp
 * https://codeload.github.com/UA6EM/Arduino-MCP4131/zip/refs/heads/mpgsp
