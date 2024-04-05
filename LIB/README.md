@@ -11,7 +11,7 @@
 * https://downloads.arduino.cc/libraries/github.com/igorantolic/Ai_Esp32_Rotary_Encoder-1.6.0.zip
 * https://codeload.github.com/mathertel/RotaryEncoder/zip/refs/heads/master
 
-## ССылки для установки ядер (аддонов)
+## Ссылки для установки ядер (аддонов)
 * https://mcudude.github.io/MiniCore/package_MCUdude_MiniCore_index.json
 * https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
   
