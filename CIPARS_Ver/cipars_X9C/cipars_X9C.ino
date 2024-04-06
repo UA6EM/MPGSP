@@ -48,13 +48,13 @@ unsigned long prevUpdateDataIna = 0; // для перерыва между об�
 
 #define LCD_RUS                // Замаркировать если не LCD_RUS вывод на дисплей
 #ifdef LCD_RUS                 // Для использования русской кодировки дисплея LCD
-#include <LCD_1602_RUS.h>      // https://github.com/UA6EM/LCD_1602_RUS (исправлена под ESP32)
-LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
+#include "LCD_1602_RUS.h"      // https://github.com/UA6EM/LCD_1602_RUS (исправлена под ESP32)
+LCD_1602_RUS lcd(0x27, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
 #else
 // здесь может быть код для вашего дисплея, для этого:
 // добавьте ваш код для LCD в файле display.ino и в функции zepper()
 
-#define I2C_ADDR 0x3F //0x27
+#define I2C_ADDR 0x27
 #include <LiquidCrystal_I2C.h>
 //LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
 LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
@@ -156,7 +156,7 @@ Cl_Btn Btn1(PIN_ENCODER_BUTTON); //Экземпляр обработчика д�
 
 /******* Простой энкодер *******/
 #include <util/atomic.h>        // для атомарности чтения данных в прерываниях
-#include <RotaryEncoder.h>      // https://www.arduino.cc/reference/en/libraries/rotaryencoder/
+#include "RotaryEncoder.h"      // https://www.arduino.cc/reference/en/libraries/rotaryencoder/
 RotaryEncoder encoder(PIN_ENCODER1, PIN_ENCODER2);
 
 volatile int newEncoderPos; // новая позиция энкодера
@@ -489,6 +489,7 @@ void loop() {
       processPotenciometr();
     }
     currentEncoderPos = newEncoderPos;
+    readDamp(currentEncoderPos);
   }
   readAnalogAndSetFreqInLoop();
 
