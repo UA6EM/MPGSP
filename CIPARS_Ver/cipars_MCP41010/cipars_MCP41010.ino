@@ -389,7 +389,7 @@ void myDisplay() {
 #endif
     }
   } else {
-    lcd.print("Т-");
+    lcd.print("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
       lcd.print(memTimers / 1000 / 60);
@@ -484,7 +484,7 @@ void setup() {
   Serial.println(FREQ_MIN);
 
   // Настраиваем частоту под катушку
-  readAnalogAndSetFreqInSetup();
+  //readAnalogAndSetFreqInSetup();
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
