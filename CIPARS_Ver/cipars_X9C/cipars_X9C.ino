@@ -485,7 +485,7 @@ void loop() {
     if (isWorkStarted == 0) {
       setTimer();
     } else if (isWorkStarted == 1) {
-      // если работа ещё началась, то можем редактировать потенциометр
+      // в режиме работа можем энкодером корректировать мощность от уровня 50%
       processPotenciometr();
     }
     currentEncoderPos = newEncoderPos;
