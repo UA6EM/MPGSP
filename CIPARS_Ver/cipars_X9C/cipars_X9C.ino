@@ -481,6 +481,7 @@ void loop() {
   }
 
   if (mill - prevUpdateDataIna > 1000 * 2) {
+    readAnalogAndSetFreqInLoop();
     Data_ina219 = ina219.shuntCurrent() * 1000;
     prevUpdateDataIna = millis();
   }
@@ -508,7 +509,7 @@ void loop() {
     currentEncoderPos = newEncoderPos;
     readDamp(currentEncoderPos);
   }
-  readAnalogAndSetFreqInLoop();
+  //readAnalogAndSetFreqInLoop();
 
 } // *********** E N D  L O O P **************
 
