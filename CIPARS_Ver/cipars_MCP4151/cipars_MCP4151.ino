@@ -3,7 +3,7 @@
 // MCP4131 и MCP4151, используются разные библиотеки!!!
 
 // Определения
-//#define DEBUG                          // Замаркировать если не нужны тесты 
+#define DEBUG                          // Замаркировать если не нужны тесты 
 //#define LCD_RUS                          // Замаркировать, если скетч для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -275,7 +275,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
   if (timlcd == 0) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
-    lcd.setCursor(0, 3);
+    lcd.setCursor(0, 1);
 #ifdef LCD_RUS
     lcd.print("    СТОП!     ");
 #else
@@ -324,7 +324,7 @@ void /*long*/ readAnalogAndSetFreqInSetup() {
   }
   ifreq = freqWithMaxI;
   // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, AD9833_SINE);
+  Ad9833.setFrequency((float)freq, AD9833_SINE);
   prevReadAnalogTime = millis();
 }
 
@@ -365,7 +365,7 @@ void readAnalogAndSetFreqInLoop() {
         freq = FREQ_MAX;
       }
       // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, AD9833_SINE);
+      Ad9833.setFrequency((float)freq, AD9833_SINE);
       delay(10);
     }
     ifreq = freqWithMaxI;
@@ -399,7 +399,7 @@ void myDisplay() {
 #endif
     }
   } else {
-    lcd.print("Т-");
+    lcd.print("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
       lcd.print(memTimers / 1000 / 60);
@@ -448,6 +448,8 @@ void myDisplay() {
 void setup() {
   Serial.begin(115200);
   Serial.println("START");
+  pinMode(PIN_RELE, OUTPUT);
+  digitalWrite(PIN_RELE, LOW);
 
   //lcd.begin();    // Зависит от версии библиотеки
   lcd.init();
@@ -488,13 +490,13 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-    Ad9833.setFrequency((float)freq, AD9833_SINE);
+  Ad9833.setFrequency((float)freq, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
 
   // Настраиваем частоту под катушку
-  readAnalogAndSetFreqInSetup();
+  //readAnalogAndSetFreqInSetup();
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
