@@ -255,11 +255,17 @@ unsigned long  setTimerLCD(unsigned long timlcd) {
   if (timlcd == 0) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
-    lcd.setCursor(0, 3);
-    lcd.print("     ЗАВЕРШЕНО!     ");
+    lcd.setCursor(0, 1);
+#ifdef LCD_RUS
+    lcd.print("   ЗАВЕРШЕНО!   ");
+#else
+    lcd.print("    THE  END    ");
+#endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
     delay(3000);
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
     stop_Buzzer();
     AD9833reset();
   }
