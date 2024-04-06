@@ -553,7 +553,7 @@ void setZepper() {
 
   power = 12;  // Электроды, полная мощность
   setResistance(map(power, 0, 12, 0, 100));
-  
+
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SQUARE);
@@ -597,6 +597,7 @@ void setZepper() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
+  AD9833setFrequency(FREQ_MIN, SINE);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
   readDamp(map(power, 0, 12, 0, 100));
 }
@@ -695,7 +696,7 @@ void setZepper1() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  AD9833setFrequency(ifreq, SINE);
+  AD9833setFrequency(FREQ_MIN, SINE);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
   readDamp(map(power, 0, 12, 0, 100));
 }
