@@ -1,9 +1,9 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
 /*  06.04.2024 - добавлена отладка, исправлен вывод на дисплей, перенесен блок
- *   настройки частоты генератора под катушку в основное телоцикла (при включении
- *   режима работы с катушкой)
- *   
+     настройки частоты генератора под катушку в основное телоцикла (при включении
+     режима работы с катушкой)
+
     04.04.2024 - Версия консолидированная для Гитхаба
     https://github.com/UA6EM/MPGSP/tree/master/CIPARS_Ver/cipars_X9C
 
@@ -274,6 +274,7 @@ unsigned long  setTimerLCD(unsigned long timlcd) {
   }
   return timlcd;
 }
+
 /*******************ПИЩАЛКА ********************/
 void start_Buzzer() {
   digitalWrite(PIN_ZUM, HIGH);
@@ -425,7 +426,7 @@ void setup() {
   pinMode(CORRECT_PIN, INPUT);
 
   digitalWrite(PIN_ZUM, LOW);
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
 
   analogReference(INTERNAL);
 
@@ -473,6 +474,7 @@ void loop() {
   if (Btn1.read() == sbLong && !isWorkStarted) {
     oldmemTimers = memTimers;
     isWorkStarted = 1;
+    digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
     readAnalogAndSetFreqInSetup();
     readDamp(currentEncoderPos);
     timMillis = millis();
