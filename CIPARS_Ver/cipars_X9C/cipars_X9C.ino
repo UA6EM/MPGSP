@@ -1,6 +1,7 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 
-/*  04.04.2024 - Версия консолидированная для Гитхаба
+/*  06.04.2024 - добавлена отладка
+ *  04.04.2024 - Версия консолидированная для Гитхаба
     https://github.com/UA6EM/MPGSP/tree/master/CIPARS_Ver/cipars_X9C
 
     03.04.2024 - Для цеппера выствлен режим сигнала Меандр
@@ -20,6 +21,9 @@
    03.07.2022
     - перенес инициализацию потенциометра в начало setup
 */
+
+#define DEBUG       // Отладочная информация в порт Serial
+
 #define SECONDS(x) ((x) * 1000UL)
 #define MINUTES(x)  (SECONDS(x) * 60UL)
 #define HOURS(x)  (MINUTES(x) * 60UL)
@@ -415,7 +419,7 @@ void setup() {
   analogReference(INTERNAL);
 
   //lcd.begin();       // Зависит от версии библиотеки
-  lcd.init();   
+  lcd.init();
   lcd.backlight();
   delay(10);
   ina219.begin(0x40); // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
@@ -501,6 +505,8 @@ void setZepper() {
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 473 KHz");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print("  F - 473 KHz  ");
   lcd.setCursor(0, 1);
@@ -509,6 +515,8 @@ void setZepper() {
   zepFreq = 395000;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 395 KHz");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print("  F - 395 KHz  ");
   lcd.setCursor(0, 1);
@@ -517,6 +525,8 @@ void setZepper() {
   zepFreq = 403850;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 403.85 KHz");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print("F - 403.85 KHz ");
   lcd.setCursor(0, 1);
@@ -525,6 +535,8 @@ void setZepper() {
   zepFreq = 397600;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 397.6 KHz");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print(" F - 397.6 KHz ");
   lcd.setCursor(0, 1);
@@ -537,6 +549,8 @@ void setZepper() {
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 30 KHz");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print("   F - 30 KHz   ");
   lcd.setCursor(0, 1);
@@ -544,6 +558,8 @@ void setZepper() {
   delay(420000);
   digitalWrite(ON_OFF_CASCADE_PIN, LOW);
   Serial.println("Перерыв 20 минут");
+  readDamp();
+
   lcd.setCursor(0, 0);
   lcd.print("     IS OFF     ");
   lcd.setCursor(0, 1);
@@ -553,6 +569,8 @@ void setZepper() {
   zepFreq = 30000;
   AD9833setFrequency(zepFreq, SQUARE);
   Serial.println("Частота 30 KHz");
+  readDamp();
+  
   lcd.setCursor(0, 0);
   lcd.print("   F - 30 KHz   ");
   lcd.setCursor(0, 1);
@@ -560,6 +578,7 @@ void setZepper() {
   delay(420000);
   digitalWrite(ON_OFF_CASCADE_PIN, LOW);
   Serial.println("Сеанс окончен");
+  
   lcd.setCursor(0, 0);
   lcd.print(" Сеанс окончен  ");
   lcd.setCursor(0, 1);
@@ -570,4 +589,21 @@ void setZepper() {
   lcd.setCursor(0, 1);
   lcd.print("                ");
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+  readDamp();
+}
+
+
+void readDamp() {
+#ifdef DEBUG
+  Serial.print("Разрешение выхода = ");
+  Serial.println(digitalRead(ON_OFF_CASCADE_PIN));
+  Serial.print("Мощность выхода = ");
+  Serial.println(currentEncoderPos);
+  Serial.print("Выходной разъём = ");
+  if (digitalRead(PIN_RELE)) {
+    Serial.println("ZEPPER");
+  } else {
+    Serial.println("STATICA");
+  }
+#endif
 }
