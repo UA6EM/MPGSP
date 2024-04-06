@@ -46,7 +46,7 @@ unsigned long prevUpdateDataIna = 0; // для перерыва между об�
 #include <Wire.h>
 #include <SPI.h>
 
-//#define LCD_RUS                // Замаркировать если не LCD_RUS вывод на дисплей
+#define LCD_RUS                // Замаркировать если не LCD_RUS вывод на дисплей
 #ifdef LCD_RUS                 // Для использования русской кодировки дисплея LCD
 #include "LCD_1602_RUS.h"      // https://github.com/UA6EM/LCD_1602_RUS (исправлена под ESP32)
 LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F, 16, 2) адрес,символов в строке,строк.
@@ -307,7 +307,7 @@ void WriteRegister(int dat) {
   digitalWrite(PIN_FSYNC, HIGH);          //Write done. Set FSYNC high
 }
 
-long readAnalogAndSetFreqInSetup() {
+void /*long*/ readAnalogAndSetFreqInSetup() {
   int maxValue = 0;
   long freqWithMaxI = FREQ_MIN;
   long freqIncrease = 1000; // 1kHz
