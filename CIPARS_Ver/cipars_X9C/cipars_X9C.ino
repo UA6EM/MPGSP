@@ -54,7 +54,7 @@ LCD_1602_RUS lcd(0x3F, 16, 2); // используемый дисплей (0x3F,
 // здесь может быть код для вашего дисплея, для этого:
 // добавьте ваш код для LCD в файле display.ino и в функции zepper()
 
-#define I2C_ADDR 0x3f //0x27
+#define I2C_ADDR 0x27
 #include <LiquidCrystal_I2C.h>
 //LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
 LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
