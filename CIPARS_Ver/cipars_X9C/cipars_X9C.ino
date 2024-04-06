@@ -435,7 +435,7 @@ void setup() {
   AD9833setFrequency(FREQ_MIN, SINE);
   delay(20);
 
-  readAnalogAndSetFreqInSetup();
+  //readAnalogAndSetFreqInSetup();
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
@@ -461,11 +461,12 @@ void loop() {
 #endif
   }
 
-  if (Btn1.read() == sbLong) {
+  if (Btn1.read() == sbLong && !isWorkStarted) {
     oldmemTimers = memTimers;
-    timMillis = millis();
     isWorkStarted = 1;
+    readAnalogAndSetFreqInSetup();
     readDamp(currentEncoderPos);
+    timMillis = millis();
   }
 
   if (mill - prevUpdateDataIna > 1000 * 2) {
@@ -475,17 +476,18 @@ void loop() {
 
   myDisplay();
 
-  if (isWorkStarted == 1) {
+  if (isWorkStarted == 1) {                 // При работе в режиме ГЕНЕРАТОР обратный отсчет времени
     memTimers = setTimerLCD(memTimers);
   }
 
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {       // Энкодер изменялся? обновляем положение
     newEncoderPos = encoder.getPosition();
   }
 
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
-    // если работа ещё не началась, то можем устанавливать время
+
+    // если работа ещё не началась, то энкодером  можем устанавливать время экспозиции
     if (isWorkStarted == 0) {
       setTimer();
     } else if (isWorkStarted == 1) {
