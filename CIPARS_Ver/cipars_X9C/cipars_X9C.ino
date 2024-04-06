@@ -395,6 +395,8 @@ void setup() {
   digitalWrite(PIN_CS, HIGH);  // X9C в режиме низкого потребления
   analogWrite(PIN_INC, 255);
   analogWrite(PIN_UD, 255);
+  pinMode(PIN_RELE, OUTPUT);
+  digitalWrite(PIN_RELE, LOW);
 
   delay(30);
   // сбрасываем потенциометр в 0%
@@ -496,7 +498,6 @@ void loop() {
 
 // ************* Функция Цеппера *************
 void setZepper() {
-  pinMode(PIN_RELE, OUTPUT);
   digitalWrite(PIN_RELE, HIGH);
   int power = 5;   // Очки, половинная мощность (5 вольт)
   setResistance(map(power, 0, 12, 0, 100));
