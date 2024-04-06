@@ -69,7 +69,7 @@ volatile  int d_resis = 127;
 #ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(I2C_ADDR, /*20, 4*/16,2);
+LiquidCrystal_I2C lcd(I2C_ADDR, /*20, 4*/16, 2);
 #else
 #define I2C_ADDR 0x3F
 #include <LCD_1602_RUS.h>
@@ -438,9 +438,11 @@ void myDisplay() {
 void setup() {
   Serial.begin(115200);
   Serial.println("START");
+  pinMode(PIN_RELE, OUTPUT);
+  digitalWrite(PIN_RELE, LOW);
 
-//  lcd.begin();    // Зависит от версии библиотеки
-  lcd.init();   // 
+  //  lcd.begin();    // Зависит от версии библиотеки
+  lcd.init();   //
 
   lcd.backlight();
   delay(1000);
@@ -478,7 +480,7 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN,AD9833_SINE);
+  Ad9833.setFrequency((float)FREQ_MIN, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
