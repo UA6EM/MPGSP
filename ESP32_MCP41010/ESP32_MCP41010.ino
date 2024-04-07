@@ -14,7 +14,7 @@
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
-//#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
+#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -431,7 +431,7 @@ void myDisplay() {
 #endif
     }
   } else {
-    lcd.print("Т-");
+    lcd.print("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
       lcd.print(memTimers / 1000 / 60);
@@ -524,12 +524,9 @@ void setup() {
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
 
-  // Настраиваем частоту под катушку
-  readAnalogAndSetFreqInSetup();
-
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
-  delay(1000);
+  delay(100);
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
 #ifdef DEBUG
