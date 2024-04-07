@@ -1,10 +1,10 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Скетч универсальный, может работать с потенциометрами MCP41010!
-// MCP41010
+
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
-//#define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
+#define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -34,6 +34,7 @@
 #define  MCP41x1_MOSI  11 // Define MOSI pin for MCP4131 or MCP4151
 #define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP4151
 #define  MCP41x1_CS    A0 // Define chipselect pin for MCP4131 or MCP4151
+#define  MCP4151MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
 #define zFreq 2           // Делитель интервала - секунда/2
 
@@ -65,6 +66,8 @@ int timerPosition = 0;
 volatile int newEncoderPos;            // Новая позиция энкодера
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
 volatile  int d_resis = 127;
+bool SbLong = false;
+
 
 #ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
@@ -520,19 +523,27 @@ void loop() {
   }
 
   if (Btn1.read() == sbLong && !isWorkStarted) {
-    oldmemTimers = memTimers;
-    isWorkStarted = 1;
-    readAnalogAndSetFreqInSetup();
-    readDamp(currentEncoderPos);
-    timMillis = millis();
+    SbLong = true;
   }
 
   if (mill - prevUpdateDataIna > 1000 * 2) {
+    readAnalogAndSetFreqInLoop();
     Data_ina219 = ina219.shuntCurrent() * 1000;
     prevUpdateDataIna = millis();
   }
 
   myDisplay();
+
+  if ( SbLong) {
+    SbLong = false;
+    oldmemTimers = memTimers;
+    isWorkStarted = 1;
+    digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+    myDisplay();
+    readAnalogAndSetFreqInSetup();
+    readDamp(currentEncoderPos);
+    timMillis = millis();
+  }
 
   if (isWorkStarted == 1) {                 // При работе в режиме ГЕНЕРАТОР обратный отсчет времени
     memTimers = setTimerLCD(memTimers);
@@ -555,9 +566,10 @@ void loop() {
     currentEncoderPos = newEncoderPos;
     readDamp(currentEncoderPos);
   }
-  readAnalogAndSetFreqInLoop();
+  //readAnalogAndSetFreqInLoop();
 
 } // *********** E N D  L O O P **************
+
 
 
 
