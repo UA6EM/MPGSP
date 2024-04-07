@@ -1,16 +1,16 @@
 // Генератор для катушки Мишина на основе DDS AD9833 для ESP32 экран LCD
 /*
- * Версия:
- *  04.04.2024 - проверена работа экрана LCD
- *  
- *  используемые библиотеки:
- *  Ai_Esp32_Rotary_Encoder-1.6.0         - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
- *  LiquidCrystal_I2C-master версии 1.1.4 - https://github.com/UA6EM/LiquidCrystal_I2C
- *  LCD_1602_RUS-master версии 1.0.5      - https://github.com/UA6EM/LCD_1602_RUS
- *  Ticker версии 2.0.                    - https://www.arduino.cc/reference/en/libraries/ticker/
- *  MCP4xxxx-ua6em версии 0.1             - https://github.com/UA6EM/MCP4xxxx
- *  AD9833-mpgsp версии 0.4.0             - https://github.com/UA6EM/AD9833/tree/mpgsp
- */
+   Версия:
+    04.04.2024 - проверена работа экрана LCD
+
+    используемые библиотеки:
+    Ai_Esp32_Rotary_Encoder-1.6.0         - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
+    LiquidCrystal_I2C-master версии 1.1.4 - https://github.com/UA6EM/LiquidCrystal_I2C
+    LCD_1602_RUS-master версии 1.0.5      - https://github.com/UA6EM/LCD_1602_RUS
+    Ticker версии 2.0.                    - https://www.arduino.cc/reference/en/libraries/ticker/
+    MCP4xxxx-ua6em версии 0.1             - https://github.com/UA6EM/MCP4xxxx
+    AD9833-mpgsp версии 0.4.0             - https://github.com/UA6EM/AD9833/tree/mpgsp
+*/
 
 // Определения
 //#define DEBUG                          // Замаркировать если не нужны тесты
@@ -34,10 +34,11 @@
 #define ROTARY_ENCODER_STEPS 1
 //#define ROTARY_ENCODER_STEPS 2
 //#define ROTARY_ENCODER_STEPS 4
+#define  MCP4151MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
 #include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
-#include "config.h"
+//#include "config.h"
 
 #include <Ticker.h>
 Ticker my_encoder;
@@ -91,6 +92,7 @@ int timerPosition = 0;
 volatile int newEncoderPos;            // Новая позиция энкодера
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
 volatile  int d_resis = 127;
+bool SbLong = false;
 
 #ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
@@ -479,9 +481,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println("START");
 
- // lcd.begin();  // Зависит от версии библиотеки
-  lcd.init();     // 
-
+  // lcd.begin();  // Зависит от версии библиотеки
+  lcd.init();     //
 
   lcd.backlight();
   delay(1000);
@@ -518,7 +519,7 @@ void setup() {
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN,AD9833_SINE);
+  Ad9833.setFrequency((float)FREQ_MIN, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
@@ -547,30 +548,43 @@ void loop() {
 
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
-#ifdef LCD_RUS    
+#ifdef LCD_RUS
     setZepper1();
 #else
     setZepper();
-#endif    
+#endif
   }
 
-  if (Btn1.read() == sbLong) {
-    oldmemTimers = memTimers;
-    timMillis = millis();
-    isWorkStarted = 1;
+    if (Btn1.read() == sbLong && !isWorkStarted) {
+    SbLong = true;
   }
+  
   if (mill - prevUpdateDataIna > 1000 * 2) {
+    readAnalogAndSetFreqInLoop();
     Data_ina219 = ina219.shuntCurrent() * 1000;
     prevUpdateDataIna = millis();
   }
+
   myDisplay();
+
+  if ( SbLong) {
+    SbLong = false;
+    oldmemTimers = memTimers;
+    isWorkStarted = 1;
+    digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+    myDisplay();
+    readAnalogAndSetFreqInSetup();
+    readDamp(currentEncoderPos);
+    timMillis = millis();
+  }
+
   if (isWorkStarted == 1) {
     memTimers = setTimerLCD(memTimers);
   }
 
-//  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-//    newEncoderPos = encoder.getPosition();
-//  }
+  //  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+  //    newEncoderPos = encoder.getPosition();
+  //  }
 
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
@@ -582,14 +596,18 @@ void loop() {
       processPotenciometr();
     }
     currentEncoderPos = newEncoderPos;
+    readDamp(currentEncoderPos);
   }
-  readAnalogAndSetFreqInLoop();
-}
+  // readAnalogAndSetFreqInLoop();
+
+} // *************** E N D  L O O P ****************
 
 
-// ************* Функция Цеппера *************
+
+
+// ***************** Функция Цеппера ****************
 void setZepper() {
-  pinMode(PIN_RELE, OUTPUT);
+  digitalWrite(PIN_RELE, HIGH);
   int power = 5;   // Очки, половинная мощность (5 вольт)
   setResistance(map(power, 0, 12, 0, 100));
   Serial.print("U = ");
@@ -599,6 +617,112 @@ void setZepper() {
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Частота 473 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 473 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("ЖдёM 2-е Mинуты");
+  delay(120000);
+  zepFreq = 395000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 395 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("  F - 395 KHz  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 403850;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 403.85 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("F - 403.85 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+  zepFreq = 397600;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 397.6 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print(" F - 397.6 KHz ");
+  lcd.setCursor(0, 1);
+  lcd.print("Ждём 2-е минуты");
+  delay(120000);
+
+  start_Buzzer(); // Звуковой сигнал взять электроды
+  delay(5000);
+  stop_Buzzer();
+
+  power = 12;  // Электроды, полная мощность
+  setResistance(map(power, 0, 12, 0, 100));
+
+  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Перерыв 20 минут");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("     IS OFF     ");
+  lcd.setCursor(0, 1);
+  lcd.print(" Отдых 20 минут ");
+  delay(1200000);
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  zepFreq = 30000;
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 30 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
+  lcd.setCursor(0, 0);
+  lcd.print("   F - 30 KHz   ");
+  lcd.setCursor(0, 1);
+  lcd.print("  Ждём 7 минут  ");
+  delay(420000);
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+  Serial.println("Сеанс окончен");
+
+  lcd.setCursor(0, 0);
+  lcd.print(" Сеанс окончен  ");
+  lcd.setCursor(0, 1);
+  lcd.print("Выключите прибор");
+  delay(5000);
+  lcd.setCursor(0, 0);
+  lcd.print("                ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
+  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+  readDamp(map(power, 0, 12, 0, 100));
+}
+
+void setZepper1() {
+  digitalWrite(PIN_RELE, HIGH);
+  int power = 5;   // Очки, половинная мощность (5 вольт)
+  setResistance(map(power, 0, 12, 0, 100));
+  Serial.print("U = ");
+  Serial.println(map(power, 0, 12, 0, 100));
+
+  long zepFreq = 473000;
+  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Serial.println("Частота 473 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("  F - 473 KHz  ");
   lcd.setCursor(0, 1);
@@ -607,6 +731,8 @@ void setZepper() {
   zepFreq = 395000;
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Частота 395 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("  F - 395 KHz  ");
   lcd.setCursor(0, 1);
@@ -615,6 +741,8 @@ void setZepper() {
   zepFreq = 403850;
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Частота 403.85 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("F - 403.85 KHz ");
   lcd.setCursor(0, 1);
@@ -623,19 +751,27 @@ void setZepper() {
   zepFreq = 397600;
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Частота 397.6 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print(" F - 397.6 KHz ");
   lcd.setCursor(0, 1);
   lcd.print(" Wait 2 minutes");
   delay(120000);
 
-  power = 127;  // Электроды, полная мощность
-  setResistance(power);
+  start_Buzzer(); // Звуковой сигнал взять электроды
+  delay(5000);
+  stop_Buzzer();
+
+  power = 12;  // Электроды, полная мощность
+  setResistance(map(power, 0, 12, 0, 100));
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
 
   zepFreq = 30000;
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Частота 30 KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("Frequency 30KHz");
   lcd.setCursor(0, 1);
@@ -643,6 +779,8 @@ void setZepper() {
   delay(420000);
   digitalWrite(ON_OFF_CASCADE_PIN, LOW);
   Serial.println("Перерыв 20 минут");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("     IS OFF     ");
   lcd.setCursor(0, 1);
@@ -652,6 +790,8 @@ void setZepper() {
   zepFreq = 30000;
   Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Serial.println("Frequency 30KHz");
+  readDamp(map(power, 0, 12, 0, 100));
+
   lcd.setCursor(0, 0);
   lcd.print("Frequency 30 KHz");
   lcd.setCursor(0, 1);
@@ -668,138 +808,70 @@ void setZepper() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  Ad9833.setFrequency(ifreq, AD9833_SINE);
+  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+  readDamp(map(power, 0, 12, 0, 100));
 }
 
 
-
-// ************* Функция Цеппера 1 *************
-void setZepper1() {
-  pinMode(PIN_RELE, OUTPUT);
-  int power = 5;   // Очки, половинная мощность (5 вольт)
-  setResistance(map(power, 0, 12, 0, 100));
-  Serial.print("U = ");
-  Serial.println(map(power, 0, 12, 0, 100));
-
-  long zepFreq = 473000;
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 473 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 473 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print("ЖдёM 2-е Mинуты");
-  delay(120000);
-  zepFreq = 395000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 395 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 395 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-  zepFreq = 403850;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 403.85 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print("F - 403.85 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-  zepFreq = 397600;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 397.6 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print(" F - 397.6 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-
-  power = 127;  // Электроды, полная мощность
-  setResistance(power);
-  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
-
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 30 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print("   F - 30 KHz   ");
-  lcd.setCursor(0, 1);
-  lcd.print("  Ждём 7 минут  ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Перерыв 20 минут");
-  lcd.setCursor(0, 0);
-  lcd.print("     IS OFF     ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Отдых 20 минут ");
-  delay(1200000);
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 30 KHz");
-  lcd.setCursor(0, 0);
-  lcd.print("   F - 30 KHz   ");
-  lcd.setCursor(0, 1);
-  lcd.print("  Ждём 7 минут  ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Сеанс окончен");
-  lcd.setCursor(0, 0);
-  lcd.print(" Сеанс окончен  ");
-  lcd.setCursor(0, 1);
-  lcd.print("Выключите прибор");
-  delay(5000);
-  lcd.setCursor(0, 0);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  Ad9833.setFrequency(ifreq, AD9833_SINE);
-  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
+void readDamp(int pw) {
+#ifdef DEBUG
+  Serial.print("Разрешение выхода = ");
+  Serial.println(digitalRead(ON_OFF_CASCADE_PIN));
+  Serial.print("Выходной разъём = ");
+  if (digitalRead(PIN_RELE)) {
+    Serial.println("ZEPPER");
+    Serial.print("U = ");
+    Serial.println(pw);
+  } else {
+    Serial.println("STATIC");
+    Serial.print("Мощность выхода = ");
+    Serial.println(currentEncoderPos);
+  }
+#endif
 }
 
 
 /*
- * G1 - TX
- * G2 - PIN_RELE 2
- * G3 - RX
- * g4 -
- * G5 - MCP41x1_CS    5            // Define chipselect pin for MCP41010
- * G6 -
- * G7 -
- * G8 -
- * G9 -
- * G10 -
- * G11 -
- * G12 - AD9833_MISO 12
- * G13 - AD9833_MOSI 13
- * G14 - AD9833_SCK  14
- * G15 - AD9833_CS   15
- * G16 -
- * G17 -
- * G18 - MCP41x1_SCK   18           // Define SCK pin for MCP41010
- * G19 - MCP41x1_MISO  19           // Define MISO pin for MCP4131 or MCP41010
- * G20 -
- * G21 - SDA // LCD, INA219
- * G22 - SCK // LCD, INA219
- * G23 - MCP41x1_MOSI   23          // Define MOSI pin for MCP4131 or MCP41010
- * G24 -
- * G25 - PIN_ENC_BUTTON 25
- * G26 -
- * G27 -
- * G28 -
- * G29 -
- * G30 -
- * G31 -
- * G32 - ON_OFF_CASCADE_PIN
- * G33 - PIN_ZUM 33
- * G34 - ROTARY_ENCODER_A_PIN 34
- * G35 - ROTARY_ENCODER_B_PIN 35
- * G36 - ROTARY_ENCODER_BUTTON_PIN 36
- * 
- * G39 - CORRECT_PIN A3 (ADC3)  SENS_IMPLOSION
- * 
- * 
- * 
- */
+   G1 - TX
+   G2 - PIN_RELE 2
+   G3 - RX
+   g4 -
+   G5 - MCP41x1_CS    5            // Define chipselect pin for MCP41010
+   G6 -
+   G7 -
+   G8 -
+   G9 -
+   G10 -
+   G11 -
+   G12 - AD9833_MISO 12
+   G13 - AD9833_MOSI 13
+   G14 - AD9833_SCK  14
+   G15 - AD9833_CS   15
+   G16 -
+   G17 -
+   G18 - MCP41x1_SCK   18           // Define SCK pin for MCP41010
+   G19 - MCP41x1_MISO  19           // Define MISO pin for MCP4131 or MCP41010
+   G20 -
+   G21 - SDA // LCD, INA219
+   G22 - SCK // LCD, INA219
+   G23 - MCP41x1_MOSI   23          // Define MOSI pin for MCP4131 or MCP41010
+   G24 -
+   G25 - PIN_ENC_BUTTON 25
+   G26 -
+   G27 -
+   G28 -
+   G29 -
+   G30 -
+   G31 -
+   G32 - ON_OFF_CASCADE_PIN
+   G33 - PIN_ZUM 33
+   G34 - ROTARY_ENCODER_A_PIN 34
+   G35 - ROTARY_ENCODER_B_PIN 35
+   G36 - ROTARY_ENCODER_BUTTON_PIN 36
+
+   G39 - CORRECT_PIN A3 (ADC3)  SENS_IMPLOSION
+
+
+
+*/
