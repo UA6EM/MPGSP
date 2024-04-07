@@ -546,9 +546,9 @@ void loop() {
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
 #ifdef LCD_RUS
-    setZepper1();
-#else
     setZepper();
+#else
+    setZepper1();
 #endif
   }
 
