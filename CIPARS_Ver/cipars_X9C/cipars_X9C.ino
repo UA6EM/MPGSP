@@ -33,7 +33,7 @@
     - перенес инициализацию потенциометра в начало setup
 */
 
-#define DEBUG       // Отладочная информация в порт Serial
+//#define DEBUG       // Отладочная информация в порт Serial
 
 #define SECONDS(x) ((x) * 1000UL)
 #define MINUTES(x)  (SECONDS(x) * 60UL)

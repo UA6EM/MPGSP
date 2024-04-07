@@ -623,6 +623,10 @@ void setZepper() {
   lcd.print("Ждём 2-е минуты");
   delay(120000);
 
+  start_Buzzer(); // Звуковой сигнал взять электроды
+  delay(5000);
+  stop_Buzzer();
+  
   power = 12;  // Электроды, полная мощность
   setResistance(map(power, 0, 12, 0, 100));
 
@@ -723,6 +727,10 @@ void setZepper1() {
   lcd.print(" Wait 2 minutes");
   delay(120000);
 
+  start_Buzzer(); // Звуковой сигнал взять электроды
+  delay(5000);
+  stop_Buzzer();
+  
   power = 12;  // Электроды, полная мощность
   setResistance(map(power, 0, 12, 0, 100));
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
