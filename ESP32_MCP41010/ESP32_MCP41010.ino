@@ -10,6 +10,7 @@
     Ticker версии 2.0.                    - https://www.arduino.cc/reference/en/libraries/ticker/
     MCP4xxxx-ua6em версии 0.1             - https://github.com/UA6EM/MCP4xxxx
     AD9833-mpgsp версии 0.4.0             - https://github.com/UA6EM/AD9833/tree/mpgsp
+    https://github.com/madhephaestus/ESP32Encoder
 */
 
 // Определения
