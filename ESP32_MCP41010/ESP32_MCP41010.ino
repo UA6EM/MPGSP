@@ -308,7 +308,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
   if (timlcd == 0) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
-    lcd.setCursor(0, 3);
+    lcd.setCursor(0, 1);
 #ifdef LCD_RUS
     lcd.print("    СТОП!     ");
 #else
@@ -318,6 +318,8 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
+    lcd.setCursor(0, 1);
+     lcd.print("              ");
   }
   return timlcd;
 }
@@ -553,10 +555,10 @@ void loop() {
 #endif
   }
 
-    if (Btn1.read() == sbLong && !isWorkStarted) {
+  if (Btn1.read() == sbLong && !isWorkStarted) {
     SbLong = true;
   }
-  
+
   if (mill - prevUpdateDataIna > 1000 * 2) {
     readAnalogAndSetFreqInLoop();
     Data_ina219 = ina219.shuntCurrent() * 1000;
