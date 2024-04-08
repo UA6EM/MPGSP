@@ -279,14 +279,16 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     isWorkStarted = 0;
     lcd.setCursor(0, 1);
 #ifdef LCD_RUS
-    lcd.print("    СТОП!     ");
+    lcd.print("     СТОП!      ");
 #else
-    lcd.print("    STOP!     ");
+    lcd.print("     STOP!      ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
   }
   return timlcd;
 }

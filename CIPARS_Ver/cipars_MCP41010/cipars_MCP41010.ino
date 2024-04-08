@@ -268,16 +268,18 @@ unsigned long setTimerLCD(unsigned long timlcd) {
   if (timlcd == 0) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
-    lcd.setCursor(0, 3);
+    lcd.setCursor(0, 1);
 #ifdef LCD_RUS
-    lcd.print("    СТОП!     ");
+    lcd.print("     СТОП!      ");
 #else
-    lcd.print("    STOP!     ");
+    lcd.print("     STOP!      ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
   }
   return timlcd;
 }
@@ -626,7 +628,7 @@ void setZepper() {
   start_Buzzer(); // Звуковой сигнал взять электроды
   delay(5000);
   stop_Buzzer();
-  
+
   power = 12;  // Электроды, полная мощность
   setResistance(map(power, 0, 12, 0, 100));
 
@@ -730,7 +732,7 @@ void setZepper1() {
   start_Buzzer(); // Звуковой сигнал взять электроды
   delay(5000);
   stop_Buzzer();
-  
+
   power = 12;  // Электроды, полная мощность
   setResistance(map(power, 0, 12, 0, 100));
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
