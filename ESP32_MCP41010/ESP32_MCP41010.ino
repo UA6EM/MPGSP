@@ -30,6 +30,7 @@
 */
 
 // Определения
+#define WIFI                             // Используем модуль вайфая
 //#define DEBUG                          // Замаркировать если не нужны тесты
 #define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
@@ -57,9 +58,30 @@
 #include "Arduino.h"
 //#include "config.h"
 
+
+#if (defined(ESP32))
+#ifdef WIFI
+#include <WiFi.h>
+//#include <HTTPClient.h>
+#include <WiFiClient.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sqlite3.h>
+
+#include <SPI.h>
+#include <FS.h>
+#include "SPIFFS.h"
+
+#include "AiEsp32RotaryEncoder.h"
+#include "Arduino.h"
+#include "config.h"
+
 #include <Ticker.h>
 Ticker my_encoder;
 float encPeriod = 0.05;
+#endif
 
 #define PIN_RELE 2
 
@@ -177,6 +199,94 @@ void IRAM_ATTR readEncoderISR() {
 }
 
 //    *** Используемые подпрограммы выносим сюда ***   //
+#define FORMAT_SPIFFS_IF_FAILED true
+
+const char *data = "Callback function called";
+static int callback(void *data, int argc, char **argv, char **azColName) {
+  int i;
+  Serial.printf("%s: ", (const char *)data);
+  for (i = 0; i < argc; i++) {
+    Serial.printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+  }
+  Serial.printf("\n");
+  return 0;
+}
+
+int db_open(const char *filename, sqlite3 **db) {
+  int rc = sqlite3_open(filename, db);
+  if (rc) {
+    Serial.printf("Can't open database: %s\n", sqlite3_errmsg(*db));
+    return rc;
+  } else {
+    Serial.printf("Opened database successfully\n");
+  }
+  return rc;
+}
+
+char *zErrMsg = 0;
+int db_exec(sqlite3 *db, const char *sql) {
+  Serial.println(sql);
+  long start = micros();
+  int rc = sqlite3_exec(db, sql, callback, (void *)data, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    Serial.printf("SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  } else {
+    Serial.printf("Operation done successfully\n");
+  }
+  Serial.print(F("Time taken:"));
+  Serial.println(micros() - start);
+  return rc;
+}
+
+void readSqlite3() {
+  sqlite3 *db1;
+  int rc;
+  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+    Serial.println("Failed to mount file system");
+    return;
+  }
+
+  // list SPIFFS contents
+  File root = SPIFFS.open("/");
+  if (!root) {
+    Serial.println("- failed to open directory");
+    return;
+  }
+  if (!root.isDirectory()) {
+    Serial.println(" - not a directory");
+    return;
+  }
+  yield();
+  File file = root.openNextFile();
+  yield();
+  while (file) {
+    if (file.isDirectory()) {
+      Serial.print("  DIR : ");
+      Serial.println(file.name());
+    } else {
+      Serial.print("  FILE: ");
+      Serial.print(file.name());
+      Serial.print("\tSIZE: ");
+      Serial.println(file.size());
+    }
+    file = root.openNextFile();
+  }
+  yield();
+  sqlite3_initialize();
+  if (db_open("/spiffs/zepper.db", &db1))
+    return;
+
+  yield();
+  rc = db_exec(db1, "SELECT * FROM frequency");
+  if (rc != SQLITE_OK) {
+    sqlite3_close(db1);
+    return;
+  }
+  yield();
+  sqlite3_close(db1);
+}
+
 
 /*** Обработчик кнопки энкодера ***/
 //------Cl_Btn----------------------
@@ -554,6 +664,10 @@ void setup() {
   wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
+
+  // Читаем базу
+  readSqlite3();
+  
 }  //******** END SETUP ********//
 
 
