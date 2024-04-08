@@ -7,9 +7,9 @@
 // Для библиотеки TFT_eSPI приведен конфигурационный файл  для ILI9341
 
 //                    Использование GITHUB
-// 1. Клонируйте проект: git clone https://github.com/UA6EM/VESTA
+// 1. Клонируйте проект: git clone https://github.com/UA6EM/MPGSP
 // 2. Исключите конфигурационный файл из индекса:
-//    git update-index --assume-unchanged esp32gsp/config.h
+//    git update-index --assume-unchanged ESP32_MCP41010/config.h
 //  (для отмены git update-index --no-assume-unchanged your_file)
 // 3. Исправьте конфигурацию в соответсвии с вашей сетью
 //    Изменения в этом файле на локальном компьютере теперь
@@ -26,8 +26,10 @@
     Ticker версии 2.0.                    - https://www.arduino.cc/reference/en/libraries/ticker/
     MCP4xxxx-ua6em версии 0.1             - https://github.com/UA6EM/MCP4xxxx
     AD9833-mpgsp версии 0.4.0             - https://github.com/UA6EM/AD9833/tree/mpgsp
-    https://github.com/madhephaestus/ESP32Encoder
-*/
+                                          - https://github.com/madhephaestus/ESP32Encoder
+                                          - https://github.com/siara-cc/esp32_arduino_sqlite3_lib
+                                          -
+*/  
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
