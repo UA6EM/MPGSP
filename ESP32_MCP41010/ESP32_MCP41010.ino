@@ -16,19 +16,23 @@
 //    не попадут на GITHUB
 
 /*
-   Версия:
+    Версия:
     04.04.2024 - проверена работа экрана LCD
 
     используемые библиотеки:
-    Ai_Esp32_Rotary_Encoder-1.6.0         - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
-    LiquidCrystal_I2C-master версии 1.1.4 - https://github.com/UA6EM/LiquidCrystal_I2C
-    LCD_1602_RUS-master версии 1.0.5      - https://github.com/UA6EM/LCD_1602_RUS
-    Ticker версии 2.0.                    - https://www.arduino.cc/reference/en/libraries/ticker/
-    MCP4xxxx-ua6em версии 0.1             - https://github.com/UA6EM/MCP4xxxx
-    AD9833-mpgsp версии 0.4.0             - https://github.com/UA6EM/AD9833/tree/mpgsp
-                                          - https://github.com/madhephaestus/ESP32Encoder
-                                          - https://github.com/siara-cc/esp32_arduino_sqlite3_lib
-                                          -
+    Ai_Esp32_Rotary_Encoder-1.6.0                - https://www.arduino.cc/reference/en/libraries/ai-esp32-rotary-encoder/
+    LiquidCrystal_I2C-master версии 1.1.4        - https://github.com/UA6EM/LiquidCrystal_I2C
+    LCD_1602_RUS-master версии 1.0.5             - https://github.com/UA6EM/LCD_1602_RUS
+    Ticker версии 2.0.                           - https://www.arduino.cc/reference/en/libraries/ticker/
+    MCP4xxxx-ua6em версии 0.1                    - https://github.com/UA6EM/MCP4xxxx
+    AD9833-mpgsp версии 0.4.0                    - https://github.com/UA6EM/AD9833/tree/mpgsp
+                                                 - https://github.com/madhephaestus/ESP32Encoder
+    esp32_arduino_sqlite3_lib-master версии 2.4  - https://github.com/siara-cc/esp32_arduino_sqlite3_lib
+    Wire версии 2.0.0
+    SPIFFS версии 2.0.0
+    FS версии 2.0.0
+    SPI версии 2.0.0
+    WiFi версии 2.0.0                                  -
 */  
 
 // Определения
@@ -288,6 +292,8 @@ void readSqlite3() {
   yield();
   sqlite3_close(db1);
 }
+// ************** END SQLITE3 *************** //
+
 
 
 /*** Обработчик кнопки энкодера ***/
