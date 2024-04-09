@@ -33,7 +33,7 @@
     FS версии 2.0.0
     SPI версии 2.0.0
     WiFi версии 2.0.0                                  -
-*/  
+*/
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
@@ -105,7 +105,8 @@ float encPeriod = 0.05;
 #define  MCP41x1_SCK   18 // Define SCK pin for MCP4131 or MCP41010
 #define  MCP41x1_MOSI  23 // Define MOSI pin for MCP4131 or MCP41010
 #define  MCP41x1_MISO  19 // Define MISO pin for MCP4131 or MCP41010
-#define  MCP41x1_CS    5  // Define chipselect pin for MCP41010
+#define  MCP41x1_CS    5  // Define chipselect pin for MCP41010 (CS for Volume)
+#define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
 
 #define zFreq 2           // Делитель интервала - секунда/2
 
@@ -137,6 +138,7 @@ int timerPosition = 0;
 volatile int newEncoderPos;            // Новая позиция энкодера
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
 volatile  int d_resis = 127;
+volatile int alc_resis;                // Установка значения регулировки ALC (MCP41010)
 bool SbLong = false;
 
 #ifndef LCD_RUS
@@ -154,7 +156,9 @@ LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 
 #include <MCP4xxxx.h>  // https://github.com/UA6EM/MCP4xxxx
 MCP4xxxx Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
+MCP4xxxx Alc(MCP41x1_ALC, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
 //MCP4xxxx Potentiometer(MCP41x1_CS);
+// Библиотека требует старта SPI в setup - SPI.begin();
 
 
 #include "INA219.h"
@@ -351,6 +355,39 @@ class Cl_Btn {
 };
 Cl_Btn Btn1(PIN_ENC_BUTTON);  //Экземпляр обработчика для кнопки энкодера
 
+//
+int getALC(long freq) {
+  int alc = map(freq, 50000, 1000000, 0, 255);
+  /*
+    if(freq <= 50000)alc = 0;
+    if(freq <= 100000)alc = 14;
+    if(freq <= 150000)alc = 27;
+    if(freq <= 200000)alc = 40;
+    if(freq <= 250000)alc = 53;
+    if(freq <= 300000)alc = 66;
+    if(freq <= 350000)alc = 80;
+    if(freq <= 400000)alc = 93;
+    if(freq <= 450000)alc = 106;
+    if(freq <= 500000)alc = 120;
+    if(freq <= 550000)alc = 133;
+    if(freq <= 600000)alc = 146;
+    if(freq <= 650000)alc = 160;
+    if(freq <= 700000)alc = 173;
+    if(freq <= 750000)alc = 186;
+    if(freq <= 800000)alc = 200;
+    if(freq <= 850000)alc = 213;
+    if(freq <= 900000)alc = 226;
+    if(freq <= 950000)alc = 240;
+    if(freq <= 1000000)alc = 255;
+  */
+  return alc;
+}
+
+void setALC(int setAlc) {
+  Alc.writeValue(setAlc);
+  delay(10);
+}
+
 
 // функция выбора времени работы
 void setTimer() {
@@ -453,7 +490,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     delay(3000);
     stop_Buzzer();
     lcd.setCursor(0, 1);
-     lcd.print("              ");
+    lcd.print("              ");
   }
   return timlcd;
 }
@@ -541,6 +578,8 @@ void readAnalogAndSetFreqInLoop() {
     Ad9833.setFrequency((float)ifreq, AD9833_SINE);
     prevReadAnalogTime = millis();
   }
+  alc_resis = getALC(ifreq); // рассчитать значение усиления сигнала
+  setALC( alc_resis);        // выставить усиление 
 }
 
 // *** Вывод на дисплей ***
@@ -646,7 +685,8 @@ void setup() {
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
 
-  SPI.begin();
+  SPI.begin();    // Для библиотеки MCP4xxxx обязательно!!!
+  
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
   Ad9833.reset();              // Ресет после включения питания
@@ -675,7 +715,7 @@ void setup() {
 
   // Читаем базу
   readSqlite3();
-  
+
 }  //******** END SETUP ********//
 
 
@@ -970,45 +1010,46 @@ void readDamp(int pw) {
 }
 
 
-/*
-   G1 - TX
-   G2 - PIN_RELE 2
-   G3 - RX
-   g4 -
-   G5 - MCP41x1_CS    5            // Define chipselect pin for MCP41010
-   G6 -
-   G7 -
-   G8 -
-   G9 -
-   G10 -
-   G11 -
-   G12 - AD9833_MISO 12
-   G13 - AD9833_MOSI 13
-   G14 - AD9833_SCK  14
-   G15 - AD9833_CS   15
-   G16 -
-   G17 -
-   G18 - MCP41x1_SCK   18           // Define SCK pin for MCP41010
-   G19 - MCP41x1_MISO  19           // Define MISO pin for MCP4131 or MCP41010
-   G20 -
-   G21 - SDA // LCD, INA219
-   G22 - SCK // LCD, INA219
-   G23 - MCP41x1_MOSI   23          // Define MOSI pin for MCP4131 or MCP41010
-   G24 -
-   G25 - PIN_ENC_BUTTON 25
-   G26 -
-   G27 -
-   G28 -
-   G29 -
-   G30 -
-   G31 -
-   G32 - ON_OFF_CASCADE_PIN
-   G33 - PIN_ZUM 33
-   G34 - ROTARY_ENCODER_A_PIN 34
-   G35 - ROTARY_ENCODER_B_PIN 35
-   G36 - ROTARY_ENCODER_BUTTON_PIN 36
 
-   G39 - CORRECT_PIN A3 (ADC3)  SENS_IMPLOSION
+/*
+  G1 - TX
+  G2 - PIN_RELE 2
+  G3 - RX
+  g4 -
+  G5 - MCP41x1_CS    5            // Define chipselect pin for MCP41010
+  G6 -
+  G7 -
+  G8 -
+  G9 -
+  G10 -
+  G11 -
+  G12 - AD9833_MISO 12
+  G13 - AD9833_MOSI 13
+  G14 - AD9833_SCK  14
+  G15 - AD9833_CS   15
+  G16 -
+  G17 - MCP41x1_ALC   17           // Define chipselect pin for MCP41010 for ALC
+  G18 - MCP41x1_SCK   18           // Define SCK pin for MCP41010
+  G19 - MCP41x1_MISO  19           // Define MISO pin for MCP4131 or MCP41010
+  G20 -
+  G21 - SDA // LCD, INA219
+  G22 - SCK // LCD, INA219
+  G23 - MCP41x1_MOSI   23          // Define MOSI pin for MCP4131 or MCP41010
+  G24 -
+  G25 - PIN_ENC_BUTTON 25
+  G26 -
+  G27 -
+  G28 -
+  G29 -
+  G30 -
+  G31 -
+  G32 - ON_OFF_CASCADE_PIN
+  G33 - PIN_ZUM 33
+  G34 - ROTARY_ENCODER_A_PIN 34
+  G35 - ROTARY_ENCODER_B_PIN 35
+  G36 - ROTARY_ENCODER_BUTTON_PIN 36
+
+  G39 - CORRECT_PIN A3 (ADC3)  SENS_IMPLOSION
 
 
 
