@@ -3,7 +3,7 @@
 
 
 // Определения
-//#define DEBUG                          // Замаркировать если не нужны тесты
+//#define DEBUG                            // Замаркировать если не нужны тесты
 #define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -785,6 +785,7 @@ void setZepper1() {
 
 
 void readDamp(int pw) {
+  int pwc = pw;
 #ifdef DEBUG
   Serial.print("Разрешение выхода = ");
   Serial.println(digitalRead(ON_OFF_CASCADE_PIN));
@@ -792,7 +793,7 @@ void readDamp(int pw) {
   if (digitalRead(PIN_RELE)) {
     Serial.println("ZEPPER");
     Serial.print("U = ");
-    Serial.println(pw);
+    Serial.println(pwc);
   } else {
     Serial.println("STATIC");
     Serial.print("Мощность выхода = ");
