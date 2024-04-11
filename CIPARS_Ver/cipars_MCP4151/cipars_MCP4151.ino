@@ -459,8 +459,10 @@ void setup() {
   lcd.init();
 
   lcd.backlight();
-  delay(1000);
+  delay(100);
 
+  
+    SPI.begin();
   // сбрасываем потенциометр в 0%
   resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
@@ -484,7 +486,6 @@ void setup() {
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
 
-  SPI.begin();
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
   Ad9833.reset();              // Ресет после включения питания
