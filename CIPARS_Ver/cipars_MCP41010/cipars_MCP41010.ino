@@ -457,9 +457,9 @@ void setup() {
 
   SPI.begin();
   // сбрасываем потенциометр в 0%
-  //resetPotenciometer();
+  resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
-  // setResistance(currentPotenciometrPercent);
+  setResistance(currentPotenciometrPercent);
 
   // ждем секунду после настройки потенциометра
   delay(100);
