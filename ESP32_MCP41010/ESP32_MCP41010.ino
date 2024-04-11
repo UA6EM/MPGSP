@@ -214,6 +214,9 @@ void IRAM_ATTR readEncoderISR() {
 #include <TFT_eSPI.h> // Hardware-specific library
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
+
+//    *** Используемые подпрограммы выносим сюда ***   //
+
 float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0;    // Saved H, M, S x & y multipliers
 float sdeg = 0, mdeg = 0, hdeg = 0;
 uint16_t osx = 120, osy = 120, omx = 120, omy = 120, ohx = 120, ohy = 120; // Saved H, M, S x & y coords
@@ -326,7 +329,6 @@ static uint8_t conv2d(const char* p) {
 }
 
 
-//    *** Используемые подпрограммы выносим сюда ***   //
 #define FORMAT_SPIFFS_IF_FAILED true
 
 const char *data = "Callback function called";
