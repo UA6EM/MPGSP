@@ -843,7 +843,7 @@ void setup() {
 
   testTFT();
   // Читаем базу
-  readSqlite3();
+  readSQLite3();
 
 }  //******** END SETUP ********//
 

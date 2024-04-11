@@ -462,7 +462,7 @@ void setup() {
 
   // ждем секунду после настройки потенциометра
   delay(100);
-
+  Serial.println("Reset Potenciometr");
   Btn1.init();
 
   pinMode(ON_OFF_CASCADE_PIN, OUTPUT);
@@ -473,12 +473,13 @@ void setup() {
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
 
   analogReference(INTERNAL);
-
+  Serial.println("Start setup INA219");
   ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
 
   SPI.begin();
+  Serial.println("Start setup AD9833");
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
   Ad9833.reset();              // Ресет после включения питания
@@ -501,15 +502,19 @@ void setup() {
   delay(1000);
   PCICR |= (1 << PCIE2);  // инициализируем порты для энкодера
   PCMSK2 |= (1 << PCINT20) | (1 << PCINT21);
+
+  Serial.println("Start Encoder");
   startEncoder();
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
 #ifdef DEBUG
+  Serial.println("Start test MCP41010");
   testMCP41010();
 #endif
   wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
+  Serial.println("END SETUP");
 }  //******** END SETUP ********//
 
 
