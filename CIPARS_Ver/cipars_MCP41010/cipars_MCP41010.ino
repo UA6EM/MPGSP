@@ -70,13 +70,13 @@ bool SbLong = false;
 
 
 #ifndef LCD_RUS
-#define I2C_ADDR 0x27  //0x3F
+#define I2C_ADDR 0x3F  //0x3F
 #include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4/*16, 2*/);
+LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
 #else
-#define I2C_ADDR 0x27  //0x3F
+#define I2C_ADDR 0x3F  //0x3F
 #include <LCD_1602_RUS.h>
-LCD_1602_RUS lcd(I2C_ADDR,20, 4 /*16, 2*/);
+LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #endif
 
 #include <Wire.h>
@@ -443,14 +443,16 @@ void myDisplay() {
 void setup() {
   Serial.begin(115200);
   Serial.println("START");
+
   pinMode(PIN_RELE, OUTPUT);
   digitalWrite(PIN_RELE, LOW);
 
   //  lcd.begin();    // Зависит от версии библиотеки
   lcd.init();   //
-
   lcd.backlight();
-  delay(1000);
+  lcd.setCursor(0, 0);
+  lcd.print("Generator MCP");
+  delay(100);
 
   // сбрасываем потенциометр в 0%
   resetPotenciometer();
@@ -458,7 +460,7 @@ void setup() {
   setResistance(currentPotenciometrPercent);
 
   // ждем секунду после настройки потенциометра
-  delay(1000);
+  delay(100);
 
   Btn1.init();
 
