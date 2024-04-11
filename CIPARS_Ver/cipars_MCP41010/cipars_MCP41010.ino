@@ -455,10 +455,11 @@ void setup() {
   lcd.print("Generator MCP");
   delay(100);
 
+  SPI.begin();
   // сбрасываем потенциометр в 0%
- //resetPotenciometer();
+  //resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
- // setResistance(currentPotenciometrPercent);
+  // setResistance(currentPotenciometrPercent);
 
   // ждем секунду после настройки потенциометра
   delay(100);
@@ -478,7 +479,6 @@ void setup() {
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
 
-  SPI.begin();
   Serial.println("Start setup AD9833");
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
