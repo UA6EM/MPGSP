@@ -1,6 +1,6 @@
 // https://purecodecpp.com/archives/1502
 
-struct ZepperDB {
+struct myDB {
   int id = 1;
   char names[30] = "Abdominal inflammation";
   int f1 = 2720;
@@ -49,6 +49,7 @@ struct ZepperDB {
 long zepFreq[42];
 
 
+
 // Обработчик функции возврата данных из базы
 const char *datas = "Callback function called";
 static int CallBack(void *datas, int argc, char **argv, char **azColName) {
@@ -65,6 +66,7 @@ static int CallBack(void *datas, int argc, char **argv, char **azColName) {
       Serial.print(j + 1);
       Serial.print(" = ");
       Serial.println(zepFreq[j]);
+      yield();
     }
     Serial.printf("\n");
     return 0;
@@ -140,15 +142,22 @@ void readSQLite3() {
     return;
 
   yield();
-  const  char * sss;
-  rc = db_exec(db1, sss = "SELECT count(*) FROM frequency");
+  int nr = 51;
+  const  char * sql;
+ 
+  sql = "SELECT * FROM frequency WHERE 'id' = ');
+  sql+= String(nr);
+  sql+= "'"";
+  
+  
+  rc = dBexec(db1, sql = "SELECT count(*) FROM frequency");
   //SELECT id, COUNT(*) FROM times WHERE status = TRUE GROUP BY id ORDER BY COUNT(*) DESC
 
   Serial.print("COUNT = ");
   //Serial.println(cnt); // не правильно
   Serial.println();
 
-  rc = db_exec(db1, "SELECT * FROM frequency");
+  rc = dBexec(db1, "SELECT * FROM frequency");
   if (rc != SQLITE_OK) {
     sqlite3_close(db1);
     return;
