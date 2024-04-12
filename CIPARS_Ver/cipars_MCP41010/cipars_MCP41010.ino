@@ -3,7 +3,7 @@
 
 
 // Определения
-//#define DEBUG                            // Замаркировать если не нужны тесты
+#define DEBUG                            // Замаркировать если не нужны тесты
 // По умолчанию дисплей имеет адрес 0X27, исправить на свой
 #define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
@@ -515,6 +515,10 @@ void setup() {
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
   Serial.println("END SETUP");
+#ifdef DEBUG
+  testAD9833();
+#endif
+
 }  //******** END SETUP ********//
 
 
@@ -809,6 +813,23 @@ void readDamp(int pw) {
   }
 #endif
 }
+
+void testAD9833() {
+  float tstFreq = 10000;
+  for (int i = 0; i <= 100; i++) {
+    Ad9833.setFrequency((float)tstFreq, AD9833_SINE);
+    tstFreq += 10000;
+    Serial.print("Freq=");
+    Serial.print(tstFreq / 1000);
+    Serial.println("KHz");
+    lcd.setCursor(0, 0);
+    lcd.print("Freq=");
+    lcd.print(tstFreq / 1000);
+    lcd.print("KHz=");
+    delay(1000);
+  }
+}
+
 
 /*
    A0 - MCP41x1_CS       CS
