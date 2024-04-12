@@ -1,3 +1,4 @@
+/*
 // https://purecodecpp.com/archives/1502
 
 struct myDB {
@@ -46,12 +47,11 @@ struct myDB {
   int f41 = NULL;
   int f42 = NULL;
 };
-long zepFreq[42];
-
-
+int zepFreq[42];
 
 // Обработчик функции возврата данных из базы
-const char *datas = "Callback function called";
+const char *tagregArray = "Callback function called";
+/*
 static int CallBack(void *datas, int argc, char **argv, char **azColName) {
   int i = 0;
   Serial.printf("%s: ", (const char *)datas);
@@ -72,6 +72,22 @@ static int CallBack(void *datas, int argc, char **argv, char **azColName) {
     return 0;
   }
 }
+*
+
+
+static int CallBack(void* tagregArray, int totalColumns, char** azColVals, char** azColNames) {
+   int* target = reinterpret_cast<int*>(tagregArray);
+   for (int i = 0; i < totalColumns; i++) {
+      const char* colName = azColNames[i];
+      const char nameFirstChar = colName[0];
+      if (nameFirstChar == 'f') {
+         const int index = atoi(colName + 1) - 1;
+         target[index] = azColVals[i] ? atoi(azColVals[i]) : 0;
+      }
+   }
+   return 0;
+}
+
 
 // Открытие базы данных
 int dBopen(const char *filename, sqlite3 **db) {
@@ -90,7 +106,7 @@ char *gzErrMsg = 0;
 int dBexec(sqlite3 *db, const char *sql) {
   Serial.println(sql);
   long start = micros();
-  int rc = sqlite3_exec(db, sql, CallBack, (void *)datas, &gzErrMsg);
+  int rc = sqlite3_exec(db, sql, CallBack, (void *)tagregArray, &gzErrMsg);
   if (rc != SQLITE_OK) {
     Serial.printf("SQL error: %s\n", gzErrMsg);
     sqlite3_free(gzErrMsg);
@@ -106,6 +122,7 @@ int dBexec(sqlite3 *db, const char *sql) {
 void readSQLite3() {
   sqlite3 *db1;
   int rc;
+  
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("Failed to mount file system");
     return;
@@ -144,20 +161,19 @@ void readSQLite3() {
   yield();
   int nr = 51;
   const  char * sql;
- 
-  sql = "SELECT * FROM frequency WHERE 'id' = ');
+ /*
+  sql = "SELECT * FROM frequency WHERE id =";
   sql+= String(nr);
-  sql+= "'"";
-  
+  sql+= "'\"";
   
   rc = dBexec(db1, sql = "SELECT count(*) FROM frequency");
   //SELECT id, COUNT(*) FROM times WHERE status = TRUE GROUP BY id ORDER BY COUNT(*) DESC
-
+*
   Serial.print("COUNT = ");
   //Serial.println(cnt); // не правильно
   Serial.println();
 
-  rc = dBexec(db1, "SELECT * FROM frequency");
+  rc = dBexec(db1, "SELECT * FROM frequency WHERE id = 51");
   if (rc != SQLITE_OK) {
     sqlite3_close(db1);
     return;
@@ -165,3 +181,5 @@ void readSQLite3() {
   yield();
   sqlite3_close(db1);
 }
+
+*/

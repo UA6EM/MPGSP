@@ -35,6 +35,17 @@
     WiFi версии 2.0.0                                  -
 */
 
+//#include <stdio.h>
+#include <stdlib.h>
+#include <Arduino.h>
+
+int zepFreq[42];
+char buffers[33];
+int zap = 51;
+String queryOne = "Hello";
+itoa(zap,buffers,10);
+queryOne+= String(buffers);
+
 // Определения
 #define WIFI                             // Используем модуль вайфая
 //#define DEBUG                          // Замаркировать если не нужны тесты
@@ -844,6 +855,12 @@ void setup() {
   testTFT();
   // Читаем базу
   readSQLite3();
+  for(int i = 0; i < 42; i++){
+    Serial.print("f");
+    Serial.print(i+1);
+    Serial.print(" = ");
+    Serial.println(zepFreq[i]);
+  }
 
 }  //******** END SETUP ********//
 
