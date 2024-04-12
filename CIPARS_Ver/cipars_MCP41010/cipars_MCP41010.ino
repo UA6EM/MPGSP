@@ -1,5 +1,6 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Скетч работает с потенциометрами MCP41010!
+// Библиотека MCP4xxxx требует запуска SPI(begin);  в setup() до начала использования
 
 
 // Определения
@@ -71,11 +72,11 @@ bool SbLong = false;
 
 
 #ifndef LCD_RUS
-#define I2C_ADDR 0x27  //0x3F
+#define I2C_ADDR 0x3F  //0x3F 0x27
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
 #else
-#define I2C_ADDR 0x27  //0x3F
+#define I2C_ADDR 0x3F  //0x3F 0x27
 #include <LCD_1602_RUS.h>
 LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #endif
@@ -816,18 +817,23 @@ void readDamp(int pw) {
 
 void testAD9833() {
   float tstFreq = 10000;
+  lcd.setCursor(0, 0);
+  lcd.print("                ");
+
   for (int i = 0; i <= 100; i++) {
     Ad9833.setFrequency((float)tstFreq, AD9833_SINE);
     tstFreq += 10000;
     Serial.print("Freq=");
-    Serial.print(tstFreq / 1000);
+    Serial.print(tstFreq / 1000, 3);
     Serial.println("KHz");
     lcd.setCursor(0, 0);
     lcd.print("Freq=");
-    lcd.print(tstFreq / 1000);
-    lcd.print("KHz=");
+    lcd.print(tstFreq / 1000, 3);
+    lcd.print("KHz");
     delay(1000);
   }
+  lcd.setCursor(0, 0);
+  lcd.print("                ");
 }
 
 
