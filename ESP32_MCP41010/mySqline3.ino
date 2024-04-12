@@ -1,5 +1,6 @@
 // https://purecodecpp.com/archives/1502
-struct ZepperDB{
+
+struct ZepperDB {
   int id = 1;
   char names[30] = "Abdominal inflammation";
   int f1 = 2720;
@@ -45,19 +46,29 @@ struct ZepperDB{
   int f41 = NULL;
   int f42 = NULL;
 };
-int zepFreq[42];
+long zepFreq[42];
 
 
 // Обработчик функции возврата данных из базы
 const char *datas = "Callback function called";
 static int CallBack(void *datas, int argc, char **argv, char **azColName) {
-  int i;
+  int i = 0;
   Serial.printf("%s: ", (const char *)datas);
-  for (i = 0; i < argc; i++) {
-    Serial.printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+  int s = atoi((argv[i]));
+  if (s == 51) {
+    for (i = 2; i < argc; i++) {
+      zepFreq[i - 2] = atoi((argv[i]));
+      //Serial.printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    for (int j = 0; j < argc; j++) {
+      Serial.print("f");
+      Serial.print(j + 1);
+      Serial.print(" = ");
+      Serial.println(zepFreq[j]);
+    }
+    Serial.printf("\n");
+    return 0;
   }
-  Serial.printf("\n");
-  return 0;
 }
 
 // Открытие базы данных
@@ -132,7 +143,7 @@ void readSQLite3() {
   const  char * sss;
   rc = db_exec(db1, sss = "SELECT count(*) FROM frequency");
   //SELECT id, COUNT(*) FROM times WHERE status = TRUE GROUP BY id ORDER BY COUNT(*) DESC
- 
+
   Serial.print("COUNT = ");
   //Serial.println(cnt); // не правильно
   Serial.println();
