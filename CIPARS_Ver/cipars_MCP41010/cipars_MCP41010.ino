@@ -23,9 +23,9 @@
 
 //AD9833
 //#define AD9833_MISO
-#define AD9833_MOSI A1  // MOSI D11 A1 - D15  11 //
-#define AD9833_SCK  A2  // SCK  D13 A2 - D16  13 //
-#define AD9833_CS   A3  // SS   D10 A3 - D17  10 //
+#define AD9833_MOSI 11 //A1  // MOSI D11 A1 - D15  11 //
+#define AD9833_SCK  13 //A2  // SCK  D13 A2 - D16  13 //
+#define AD9833_CS   10 //A3  // SS   D10 A3 - D17  10 //
 
 //LCD1602_I2C OR LCD2004_I2C
 #define I2C_SDA     A4    // LCD1602 SDA
@@ -99,8 +99,8 @@ int currentPotenciometrPercent = 127;
 //--------------- Create an AD9833 object ----------------
 #include <AD9833.h>  // Пробуем новую по ссылкам в README закладке
 //AD9833 AD(10, 11, 13);     // SW SPI over the HW SPI pins (UNO);
-//AD9833 Ad9833(AD9833_CS);  // HW SPI Defaults to 25MHz internal reference frequency
-AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
+AD9833 Ad9833(AD9833_CS);  // HW SPI 
+//AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 
 
 
