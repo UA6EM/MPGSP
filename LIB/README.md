@@ -14,6 +14,7 @@
 * https://codeload.github.com/siara-cc/esp32_arduino_sqlite3_lib/zip/refs/tags/2.4
 * https://github.com/Bodmer/TFT_eSPI
 * https://github.com/siara-cc/esp32_arduino_sqlite3_lib
+* https://github.com/UA6EM/MD_AD9833
 * 
 
 ## Ссылки для установки ядер (аддонов)
