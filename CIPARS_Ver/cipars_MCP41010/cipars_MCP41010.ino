@@ -97,11 +97,14 @@ int currentPotenciometrPercent = 127;
 
 
 //--------------- Create an AD9833 object ----------------
-#include <AD9833.h>  // Пробуем новую по ссылкам в README закладке
+//#include <AD9833.h>  // Пробуем новую по ссылкам в README закладке
 //AD9833 AD(10, 11, 13);     // SW SPI over the HW SPI pins (UNO);
-AD9833 Ad9833(AD9833_CS);  // HW SPI 
+//AD9833 Ad9833(AD9833_CS);  // HW SPI
 //AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 
+#include <MD_AD9833.h>
+//MD_AD9833  Ad9833(PIN_FSYNC);  // Hardware SPI
+MD_AD9833  Ad9833(AD9833_MOSI, AD9833_SCK, AD9833_CS); // Arbitrary SPI pins
 
 
 //    *** Используемые подпрограммы выносим сюда ***   //
@@ -316,12 +319,14 @@ void /*long*/ readAnalogAndSetFreqInSetup() {
       freq = FREQ_MAX;
     }
     // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, AD9833_SINE);
+    //Ad9833.setFrequency((float)freq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)freq);
     delay(20);
   }
   ifreq = freqWithMaxI;
   // подаём частоту на генератор
-  Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+  //Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)ifreq);
   prevReadAnalogTime = millis();
 }
 
@@ -341,7 +346,8 @@ void readAnalogAndSetFreqInLoop() {
       minimalFreq = FREQ_MIN;
     }
     // подаём на генератор минимальную частоту из диапазона +-10кГц
-    Ad9833.setFrequency((float)minimalFreq, AD9833_SINE);
+    //Ad9833.setFrequency((float)minimalFreq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)minimalFreq);
     delay(20);
 
     int maxValue = 0;
@@ -362,11 +368,13 @@ void readAnalogAndSetFreqInLoop() {
         freq = FREQ_MAX;
       }
       // подаём частоту на генератор
-      Ad9833.setFrequency((float)freq, AD9833_SINE);
+      //Ad9833.setFrequency((float)freq, AD9833_SINE);
+      Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)freq);
       delay(10);
     }
     ifreq = freqWithMaxI;
-    Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+    //Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)ifreq);
     prevReadAnalogTime = millis();
   }
 }
@@ -483,13 +491,16 @@ void setup() {
   Serial.println("Start setup AD9833");
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
-  Ad9833.reset();              // Ресет после включения питания
-  Ad9833.setSPIspeed(freqSPI); // Частота SPI для AD9833 установлена 4 MHz
-  Ad9833.setWave(AD9833_OFF);  // Turn OFF the output
-    delay(10);
-  Ad9833.setFrequency((float)FREQ_MIN, 0);
-  Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
-
+  /*
+    Ad9833.reset();              // Ресет после включения питания
+    Ad9833.setSPIspeed(freqSPI); // Частота SPI для AD9833 установлена 4 MHz
+    Ad9833.setWave(AD9833_OFF);  // Turn OFF the output
+     delay(10);
+    Ad9833.setFrequency((float)FREQ_MIN, 0);
+    Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
+  */
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)FREQ_MIN);
+  Ad9833.setMode(MD_AD9833::MODE_SINE);
   // выставляем минимальную частоту для цикла определения максимального тока
 
   Serial.print("freq=");
@@ -598,7 +609,9 @@ void setZepper() {
 
   long zepFreq = 473000;
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 473 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -608,7 +621,9 @@ void setZepper() {
   lcd.print("ЖдёM 2-е Mинуты");
   delay(120000);
   zepFreq = 395000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 395 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -618,7 +633,9 @@ void setZepper() {
   lcd.print("Ждём 2-е минуты");
   delay(120000);
   zepFreq = 403850;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 403.85 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -628,7 +645,9 @@ void setZepper() {
   lcd.print("Ждём 2-е минуты");
   delay(120000);
   zepFreq = 397600;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 397.6 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -647,7 +666,9 @@ void setZepper() {
 
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
   zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 30 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -667,7 +688,9 @@ void setZepper() {
   delay(1200000);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 30 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -688,7 +711,9 @@ void setZepper() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
+  //Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
+  Ad9833.setMode(MD_AD9833::MODE_SINE);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)FREQ_MIN);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
   readDamp(map(power, 0, 12, 0, 100));
 }
@@ -702,7 +727,9 @@ void setZepper1() {
 
   long zepFreq = 473000;
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 473 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -712,7 +739,9 @@ void setZepper1() {
   lcd.print(" Wait 2 minutes");
   delay(120000);
   zepFreq = 395000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 395 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -722,7 +751,9 @@ void setZepper1() {
   lcd.print(" Wait 2 minutes");
   delay(120000);
   zepFreq = 403850;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 403.85 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -732,7 +763,9 @@ void setZepper1() {
   lcd.print(" Wait 2 minutes");
   delay(120000);
   zepFreq = 397600;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 397.6 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -751,7 +784,9 @@ void setZepper1() {
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
 
   zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Частота 30 KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -771,7 +806,9 @@ void setZepper1() {
   delay(1200000);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
+  Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
   Serial.println("Frequency 30KHz");
   readDamp(map(power, 0, 12, 0, 100));
 
@@ -791,7 +828,9 @@ void setZepper1() {
   lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
+  //Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
+  Ad9833.setMode(MD_AD9833::MODE_SINE);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)FREQ_MIN);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
   readDamp(map(power, 0, 12, 0, 100));
 }
@@ -822,7 +861,10 @@ void testAD9833() {
 
 m1:
   for (int i = 0; i <= 100; i++) {
-    Ad9833.setFrequency((float)tstFreq, AD9833_SINE);
+    // Ad9833.setFrequency((float)tstFreq, AD9833_SINE);
+    Ad9833.setMode(MD_AD9833::MODE_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)tstFreq);
+
     tstFreq += 10000;
     Serial.print("Freq=");
     Serial.print(tstFreq / 1000, 3);
@@ -835,7 +877,7 @@ m1:
   }
   lcd.setCursor(0, 0);
   lcd.print("                ");
- goto m1; 
+  goto m1;
 }
 
 
