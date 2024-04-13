@@ -23,9 +23,9 @@
 
 //AD9833
 //#define AD9833_MISO
-#define AD9833_MOSI A1
-#define AD9833_SCK  A2
-#define AD9833_CS   A3
+#define AD9833_MOSI A1  // MOSI D11 A1 - D15  11 //
+#define AD9833_SCK  A2  // SCK  D13 A2 - D16  13 //
+#define AD9833_CS   A3  // SS   D10 A3 - D17  10 //
 
 //LCD1602_I2C OR LCD2004_I2C
 #define I2C_SDA     A4    // LCD1602 SDA
@@ -60,7 +60,7 @@ long FREQ_MIN = 200000;                // 200kHz
 long FREQ_MAX = 500000;                // 500kHz
 long ifreq = FREQ_MIN;
 long freq = FREQ_MIN;
-const unsigned long freqSPI = 250000;  // Частота только для HW SPI AD9833
+const unsigned long freqSPI = 125000;  // Частота только для HW SPI AD9833
 // UNO SW SPI = 250kHz
 const unsigned long availableTimers[] = { oneMinute * 15, oneMinute * 30, oneMinute * 45, oneMinute * 60 };
 const byte maxTimers = 4;
@@ -486,11 +486,11 @@ void setup() {
   Ad9833.reset();              // Ресет после включения питания
   Ad9833.setSPIspeed(freqSPI); // Частота SPI для AD9833 установлена 4 MHz
   Ad9833.setWave(AD9833_OFF);  // Turn OFF the output
-  delay(10);
+    delay(10);
+  Ad9833.setFrequency((float)FREQ_MIN, 0);
   Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
 
   // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN, AD9833_SINE);
 
   Serial.print("freq=");
   Serial.println(FREQ_MIN);
@@ -820,6 +820,7 @@ void testAD9833() {
   lcd.setCursor(0, 0);
   lcd.print("                ");
 
+m1:
   for (int i = 0; i <= 100; i++) {
     Ad9833.setFrequency((float)tstFreq, AD9833_SINE);
     tstFreq += 10000;
@@ -834,6 +835,7 @@ void testAD9833() {
   }
   lcd.setCursor(0, 0);
   lcd.print("                ");
+ goto m1; 
 }
 
 

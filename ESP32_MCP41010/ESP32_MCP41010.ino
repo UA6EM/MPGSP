@@ -336,9 +336,12 @@ static uint8_t conv2d(const char* p) {
 int zepDbFreq[42];
 int zepDbExpo[42];
 int zepDbPause[42];
-
+char *zErrMsg = 0;
 char buffers[33];
+
 int zap = 51;
+int zepperMode = 1;
+
 String queryOne = "SELECT * FROM frequency WHERE id = ";
 String queryTwo = "SELECT * FROM expositions WHERE id = ";
 String queryTree = "SELECT * FROM pauses WHERE id = ";
@@ -428,23 +431,6 @@ int db_open(const char *filename, sqlite3 **db) {
   }
   return rc;
 }
-/*
-  char *zErrMsg = 0;
-  int db_exec(sqlite3 *db, const char *sql) {
-  Serial.println(sql);
-  long start = micros();
-  int rc = sqlite3_exec(db, sql, callback, (void *)data, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    Serial.printf("SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  } else {
-    Serial.printf("Operation done successfully\n");
-  }
-  Serial.print(F("Time taken:"));
-  Serial.println(micros() - start);
-  return rc;
-  }
-*/
 
 int readSQLite3() {
   printf("Go on!!!\n\n");
@@ -481,9 +467,7 @@ int readSQLite3() {
   }
 
   sqlite3* db;
-  char* zErrMsg = 0;
   sqlite3_initialize();
-
   int rc = sqlite3_open(DBName /*"/spiffs/zepper.db"*/, &db);
   if (rc) {
     printf("Can't open database: %s\n", sqlite3_errmsg(db));
@@ -492,7 +476,7 @@ int readSQLite3() {
   }
 
   // Принимающий массив передаётся чертвёртым параметром!
-  itoa(zap, buffers, 10);
+  itoa(zepperMode, buffers, 10);
   queryOne += String(buffers);
 
   rc = sqlite3_exec(db, queryOne.c_str(), callback, zepDbFreq, &zErrMsg);
@@ -917,7 +901,7 @@ void setup() {
   Serial.print("freq=");
   Serial.print(FREQ_MIN);
   Serial.println(" Hz");
-  
+
   Data_ina219 = ina219.shuntCurrent() * 1000;
   myDisplay();
   delay(100);
