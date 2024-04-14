@@ -725,6 +725,31 @@ void setALC(int setAlc) {
   delay(10);
 }
 
+void setAlcFreq(long freq) { // Установка по измеренному уровню сигнала
+   int alc;
+   if(freq >= 50000)alc = 0;
+    if(freq >= 100000)alc = 14;
+    if(freq >= 150000)alc = 27;
+    if(freq >= 200000)alc = 40;
+    if(freq >= 250000)alc = 53;
+    if(freq >= 300000)alc = 66;
+    if(freq >= 350000)alc = 80;
+    if(freq >= 400000)alc = 93;
+    if(freq >= 450000)alc = 106;
+    if(freq >= 500000)alc = 120;
+    if(freq >= 550000)alc = 133;
+    if(freq >= 600000)alc = 146;
+    if(freq >= 650000)alc = 160;
+    if(freq >= 700000)alc = 173;
+    if(freq >= 750000)alc = 186;
+    if(freq >= 800000)alc = 200;
+    if(freq >= 850000)alc = 213;
+    if(freq >= 900000)alc = 226;
+    if(freq >= 950000)alc = 240;
+    if(freq >= 1000000)alc = 255;
+  Alc.writeValue(alc);
+  delay(10);
+}
 
 // функция выбора времени работы
 void setTimer() {
