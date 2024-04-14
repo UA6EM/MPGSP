@@ -879,7 +879,7 @@ m1:
   }
   lcd.setCursor(0, 0);
   lcd.print("                ");
-  goto m1;
+ // goto m1;
 }
 
 
