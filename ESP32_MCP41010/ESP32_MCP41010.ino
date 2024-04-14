@@ -38,7 +38,7 @@
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
-//#define DEBUG                          // Замаркировать если не нужны тесты
+#define DEBUG                          // Замаркировать если не нужны тесты
 #define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -60,7 +60,7 @@
 #define ROTARY_ENCODER_STEPS 1
 //#define ROTARY_ENCODER_STEPS 2
 //#define ROTARY_ENCODER_STEPS 4
-#define  MCP4151MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
+#define  MCP41010MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
 #include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
@@ -344,24 +344,24 @@ char buffers[33];
 
 int numerInTable = 1;
 
-String queryOne = "SELECT * FROM frequencys WHERE id = ";
-String queryTwo = "SELECT * FROM expositions WHERE id = ";
-String queryTree = "SELECT * FROM pauses WHERE id = ";
-String queryFour = "SELECT * FROM modessig WHERE id = ";
-String queryFive = "SELECT * FROM modesgen WHERE id = ";
+String queryFreq = "SELECT * FROM frequencys WHERE id = ";
+String queryExpo = "SELECT * FROM expositions WHERE id = ";
+String queryPause = "SELECT * FROM pauses WHERE id = ";
+String queryGen = "SELECT * FROM modesgen WHERE id = ";
+String querySig = "SELECT * FROM modessig WHERE id = ";
 
 //const char* DBName = "/spiffs/zepper.db";
 const char* DBName = "/spiffs/standard.db";
 
-struct cicle {
+struct  {
   int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
   int ModeSig;   // 0 - OFF, 1 - SINE, 2 - QUADRE1, 3 - QUADRE2, 4 - TRIANGLE
   int Freq;      // Частота сигнала
   int Exposite;  // Время экспозиции
   int Pause;     // Пауза после отработки времени экспозиции
-};
+} Cicle;
 
-struct myDB {
+struct  {
   int id = 1;
   char names[30] = "Abdominal inflammation";
   int f1 = 2720;
@@ -406,7 +406,7 @@ struct myDB {
   int f40 = NULL;
   int f41 = NULL;
   int f42 = NULL;
-};
+} myDB;
 
 // Универсальный callback
 // Вызывается столько раз, сколько строк вернул запрос. Т.е. один вызов на строку!
@@ -490,18 +490,12 @@ int readSQLite3() {
   // Принимающий массив передаётся чертвёртым параметром!
   // Формируем строки запросов к таблицам базы данных
   itoa(numerInTable, buffers, 10);
-  queryOne  += String(buffers);
-  queryTwo  += String(buffers);
-  queryTree += String(buffers);
-  queryFour += String(buffers);
-  queryFive += String(buffers);
-/*
-  int zepDbFreq[42];
-  int zepDbExpo[42];
-  int zepDbPause[42];
-  int zepDbModeGen[42];
-  int zepDbModeSig[42];
- */ 
+  queryFreq  += String(buffers);
+  queryExpo  += String(buffers);
+  queryPause += String(buffers);
+  queryGen   += String(buffers);
+  querySig   += String(buffers);
+
   Serial.println();
   Serial.print("миллис начала = ");
   unsigned long gomill = millis();
@@ -509,7 +503,7 @@ int readSQLite3() {
   Serial.println();
   
   //заполним массив частот
-  rc = sqlite3_exec(db, queryOne.c_str(), callback, zepDbFreq, &zErrMsg);
+  rc = sqlite3_exec(db, queryFreq.c_str(), callback, zepDbFreq, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
     sqlite3_free(zErrMsg);
@@ -520,11 +514,11 @@ int readSQLite3() {
       printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
     }
   }
-  Serial.print(queryOne);
+  Serial.print(queryFreq);
   Serial.println("  - Обработан");
 
   //заполним массив экспозиций
-  rc = sqlite3_exec(db, queryTwo.c_str(), callback, zepDbExpo, &zErrMsg);
+  rc = sqlite3_exec(db, queryExpo.c_str(), callback, zepDbExpo, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
     sqlite3_free(zErrMsg);
@@ -535,11 +529,11 @@ int readSQLite3() {
       printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
     }
   }
-  Serial.print(queryTwo);
+  Serial.print(queryExpo);
   Serial.println("  - Обработан");
 
   //заполним массив пауз
-  rc = sqlite3_exec(db, queryTree.c_str(), callback, zepDbPause, &zErrMsg);
+  rc = sqlite3_exec(db, queryPause.c_str(), callback, zepDbPause, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
     sqlite3_free(zErrMsg);
@@ -550,11 +544,11 @@ int readSQLite3() {
       printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
     }
   }
-  Serial.print(queryTree);
+  Serial.print(queryPause);
   Serial.println("  - Обработан");
 
   //заполним массив режимов генератора
-  rc = sqlite3_exec(db, queryFour.c_str(), callback, zepDbModeGen, &zErrMsg);
+  rc = sqlite3_exec(db, queryGen.c_str(), callback, zepDbModeGen, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
     sqlite3_free(zErrMsg);
@@ -565,11 +559,11 @@ int readSQLite3() {
       printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
     }
   }
-  Serial.print(queryFour);
+  Serial.print(queryGen);
   Serial.println("  - Обработан");
 
   //заполним массив режимов вида сигнала генератора
-  rc = sqlite3_exec(db, queryFive.c_str(), callback, zepDbModeSig, &zErrMsg);
+  rc = sqlite3_exec(db, querySig.c_str(), callback, zepDbModeSig, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
     sqlite3_free(zErrMsg);
@@ -580,7 +574,7 @@ int readSQLite3() {
       printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
     }
   }
-  Serial.print(queryFive);
+  Serial.print(querySig);
   Serial.println("  - Обработан");
 
   Serial.println();
@@ -592,7 +586,51 @@ int readSQLite3() {
   Serial.println();
 
   sqlite3_close(db);
+
+  setCicleStructure();
   return 0;
+}
+
+void setCicleStructure(){
+ static int sstruc; // = 0;
+ Cicle.ModeGen  = zepDbModeGen[sstruc];
+ Cicle.ModeSig  = zepDbModeSig[sstruc];
+ Cicle.Freq     = zepDbFreq[sstruc];
+ Cicle.Exposite = zepDbExpo[sstruc];
+ Cicle.Pause    = zepDbPause[sstruc];
+
+ #ifdef DEBUG
+ Serial.print("Cicle.ModeGen  = ");
+ Serial.println(Cicle.ModeGen);
+ 
+ Serial.print("Cicle.ModeSig  = ");
+ Serial.println(Cicle.ModeSig);
+ 
+ Serial.print("Cicle.Freq     =");
+ Serial.println(Cicle.Freq);
+ 
+ Serial.print("Cicle.Exposite = ");
+ Serial.println(Cicle.Exposite);
+ 
+ Serial.print("Cicle.Pause    = ");
+ Serial.println(Cicle.Pause);
+ #endif
+  
+  /*
+  int zepDbFreq[42];
+  int zepDbExpo[42];
+  int zepDbPause[42];
+  int zepDbModeGen[42];
+  int zepDbModeSig[42];
+
+  struct Cicle {
+  int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
+  int ModeSig;   // 0 - OFF, 1 - SINE, 2 - QUADRE1, 3 - QUADRE2, 4 - TRIANGLE
+  int Freq;      // Частота сигнала
+  int Exposite;  // Время экспозиции
+  int Pause;     // Пауза после отработки времени экспозиции
+  };
+ */ 
 }
 
 // ************** END SQLITE3 *************** //
@@ -925,7 +963,7 @@ void myDisplay() {
 #endif
     }
     lcd.print(" U=");
-#ifdef MCP4151MOD  // можно замапить в реальный % выходного сигнала
+#ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
     lcd.print(map(currentPotenciometrPercent, 1, 255, 1, 100));
 #else
     lcd.print(map(currentPotenciometrPercent, 1, 127, 1, 100));
@@ -1026,7 +1064,7 @@ void setup() {
     Serial.println(zepDbFreq[i]);
   }
 
-  Serial.println(queryOne);
+  Serial.println(queryFreq);
   */
 }  //******** END SETUP ********//
 

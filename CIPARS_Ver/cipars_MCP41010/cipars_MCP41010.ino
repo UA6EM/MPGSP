@@ -4,7 +4,7 @@
 
 
 // Определения
-#define DEBUG                          // Замаркировать если не нужны тесты
+//#define DEBUG                          // Замаркировать если не нужны тесты
 //                                     // По умолчанию дисплей имеет адрес 0X27, 
 //                                     // исправить на свой!!!
 #define LCD_RUS                        // Замаркировать, если скетч не для LCD_RUS
@@ -33,10 +33,11 @@
 #define I2C_SCK     A5    // LCD1602 SCK
 
 //MCP41010
-#define  MCP41x1_SCK   13 // Define SCK pin for MCP4131 or MCP4151
-#define  MCP41x1_MOSI  11 // Define MOSI pin for MCP4131 or MCP4151
-#define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP4151
-#define  MCP41x1_CS    A0 // Define chipselect pin for MCP4131 or MCP4151
+#define  MCP41x1_SCK   13 // Define SCK pin for for MCP41010
+#define  MCP41x1_MOSI  11 // Define MOSI pin for MCP41010
+#define  MCP41x1_MISO  12 // Define MISO pin for MCP41010
+#define  MCP41x1_CS    A0 // Define chipselect pin for MCP41010 for Volume
+#define  MCP41x1_ALC   10 // Define chipselect pin for MCP41010 for ALC
 #define  MCP4151MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
 #define zFreq 2           // Делитель интервала - секунда/2
@@ -87,6 +88,7 @@ LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 
 #include <MCP4xxxx.h>  // https://github.com/UA6EM/MCP4xxxx
 MCP4xxxx Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
+MCP4xxxx Alc(MCP41x1_ALC, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
 //MCP4xxxx Potentiometer(MCP41x1_CS);
 
 
@@ -109,6 +111,63 @@ MD_AD9833  Ad9833(AD9833_MOSI, AD9833_SCK, AD9833_CS); // Arbitrary SPI pins
 
 
 //    *** Используемые подпрограммы выносим сюда ***   //
+int getALC(long freq) {
+  int alc = map(freq, 50000, 1000000, 0, 255);
+  /*
+    if(freq <= 50000)alc = 0;
+    if(freq <= 100000)alc = 14;
+    if(freq <= 150000)alc = 27;
+    if(freq <= 200000)alc = 40;
+    if(freq <= 250000)alc = 53;
+    if(freq <= 300000)alc = 66;
+    if(freq <= 350000)alc = 80;
+    if(freq <= 400000)alc = 93;
+    if(freq <= 450000)alc = 106;
+    if(freq <= 500000)alc = 120;
+    if(freq <= 550000)alc = 133;
+    if(freq <= 600000)alc = 146;
+    if(freq <= 650000)alc = 160;
+    if(freq <= 700000)alc = 173;
+    if(freq <= 750000)alc = 186;
+    if(freq <= 800000)alc = 200;
+    if(freq <= 850000)alc = 213;
+    if(freq <= 900000)alc = 226;
+    if(freq <= 950000)alc = 240;
+    if(freq <= 1000000)alc = 255;
+  */
+  return alc;
+}
+
+void setALC(int setAlc) { // Установка по измеренному уровню сигнала
+  Alc.writeValue(setAlc);
+  delay(10);
+}
+
+void setAlcFreq(long freq) { // Установка по измеренному уровню сигнала
+   int alc;
+   if(freq <= 50000)alc = 0;
+    if(freq <= 100000)alc = 14;
+    if(freq <= 150000)alc = 27;
+    if(freq <= 200000)alc = 40;
+    if(freq <= 250000)alc = 53;
+    if(freq <= 300000)alc = 66;
+    if(freq <= 350000)alc = 80;
+    if(freq <= 400000)alc = 93;
+    if(freq <= 450000)alc = 106;
+    if(freq <= 500000)alc = 120;
+    if(freq <= 550000)alc = 133;
+    if(freq <= 600000)alc = 146;
+    if(freq <= 650000)alc = 160;
+    if(freq <= 700000)alc = 173;
+    if(freq <= 750000)alc = 186;
+    if(freq <= 800000)alc = 200;
+    if(freq <= 850000)alc = 213;
+    if(freq <= 900000)alc = 226;
+    if(freq <= 950000)alc = 240;
+    if(freq <= 1000000)alc = 255;
+  Alc.writeValue(alc);
+  delay(10);
+}
 
 /*** Обработчик кнопки энкодера ***/
 //------Cl_Btn----------------------
@@ -465,8 +524,11 @@ void setup() {
   lcd.print("Generator MCP");
   delay(100);
 
-  //SPI.begin();
+  //SPI.begin(); MCP41010 init
   Potentiometer.begin();
+  Alc.begin();
+  setAlcFreq(FREQ_MIN);   // выставляем усиление по выбираемой частоте
+  
   // сбрасываем потенциометр в 0%
   resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
@@ -610,6 +672,7 @@ void setZepper() {
   Serial.println(map(power, 0, 12, 0, 100));
 
   long zepFreq = 473000;
+  setAlcFreq(zepFreq);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
@@ -623,6 +686,7 @@ void setZepper() {
   lcd.print("ЖдёM 2-е Mинуты");
   delay(120000);
   zepFreq = 395000;
+  setAlcFreq(zepFreq);
   //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
@@ -635,6 +699,7 @@ void setZepper() {
   lcd.print("Ждём 2-е минуты");
   delay(120000);
   zepFreq = 403850;
+  setAlcFreq(zepFreq);
   // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
@@ -647,6 +712,7 @@ void setZepper() {
   lcd.print("Ждём 2-е минуты");
   delay(120000);
   zepFreq = 397600;
+  setAlcFreq(zepFreq);
   // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
@@ -668,6 +734,7 @@ void setZepper() {
 
   digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
   zepFreq = 30000;
+  setAlcFreq(zepFreq);
   // Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
@@ -690,6 +757,7 @@ void setZepper() {
   delay(1200000);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   zepFreq = 30000;
+  setAlcFreq(zepFreq);
   //Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
   Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)zepFreq);
@@ -716,6 +784,7 @@ void setZepper() {
   //Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
   Ad9833.setMode(MD_AD9833::MODE_SINE);
   Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)FREQ_MIN);
+  setAlcFreq(FREQ_MIN);
   digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
   readDamp(map(power, 0, 12, 0, 100));
 }
