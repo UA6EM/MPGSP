@@ -10,8 +10,8 @@
 // 1. Клонируйте проект: git clone https://github.com/UA6EM/MPGSP
 // 2. Исключите конфигурационный файл из индекса:
 //    git update-index --assume-unchanged ESP32_MCP41010/config.h
-//  (для отмены git update-index --no-assume-unchanged your_file)
-// 3. Исправьте конфигурацию в соответсвии с вашей сетью
+//   (для отмены git update-index --no-assume-unchanged your_file)
+// 3. Исправьте конфигурацию в соответствии с вашей сетью
 //    Изменения в этом файле на локальном компьютере теперь
 //    не попадут на GITHUB
 
@@ -24,7 +24,7 @@
     LiquidCrystal_I2C-master версии 1.1.4        - https://github.com/UA6EM/LiquidCrystal_I2C
     LCD_1602_RUS-master версии 1.0.5             - https://github.com/UA6EM/LCD_1602_RUS
     Ticker версии 2.0.                           - https://www.arduino.cc/reference/en/libraries/ticker/
-    MCP4xxxx-ua6em версии 0.1                    - https://github.com/UA6EM/MCP4xxxx
+    MCP4xxxx-ua6em версии 0.2                    - https://github.com/UA6EM/MCP4xxxx
     AD9833-mpgsp версии 0.4.0                    - https://github.com/UA6EM/AD9833/tree/mpgsp
                                                  - https://github.com/madhephaestus/ESP32Encoder
     esp32_arduino_sqlite3_lib-master версии 2.4  - https://github.com/siara-cc/esp32_arduino_sqlite3_lib
@@ -161,7 +161,7 @@ LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 MCP4xxxx Potentiometer(MCP41x1_CS, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
 MCP4xxxx Alc(MCP41x1_ALC, MCP41x1_MOSI, MCP41x1_SCK, 250000UL, SPI_MODE0);
 //MCP4xxxx Potentiometer(MCP41x1_CS);
-// Библиотека требует старта SPI в setup - SPI.begin();
+// Библиотека требует инициализации объекта в setup - Alc.begin(); Potentiometer.begin();
 
 
 #include "INA219.h"
@@ -336,19 +336,31 @@ static uint8_t conv2d(const char* p) {
 int zepDbFreq[42];
 int zepDbExpo[42];
 int zepDbPause[42];
+int zepDbModeGen[42];
+int zepDbModeSig[42];
+
 char *zErrMsg = 0;
 char buffers[33];
 
-int zap = 51;
-int zepperMode = 1;
+int numerInTable = 1;
 
-String queryOne = "SELECT * FROM frequency WHERE id = ";
+String queryOne = "SELECT * FROM frequencys WHERE id = ";
 String queryTwo = "SELECT * FROM expositions WHERE id = ";
 String queryTree = "SELECT * FROM pauses WHERE id = ";
+String queryFour = "SELECT * FROM modessig WHERE id = ";
+String queryFive = "SELECT * FROM modesgen WHERE id = ";
 
-const char* DBName = "/spiffs/zepper.db";
+//const char* DBName = "/spiffs/zepper.db";
+const char* DBName = "/spiffs/standard.db";
 
-// https://purecodecpp.com/archives/1502
+struct cicle {
+  int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
+  int ModeSig;   // 0 - OFF, 1 - SINE, 2 - QUADRE1, 3 - QUADRE2, 4 - TRIANGLE
+  int Freq;      // Частота сигнала
+  int Exposite;  // Время экспозиции
+  int Pause;     // Пауза после отработки времени экспозиции
+};
+
 struct myDB {
   int id = 1;
   char names[30] = "Abdominal inflammation";
@@ -476,9 +488,27 @@ int readSQLite3() {
   }
 
   // Принимающий массив передаётся чертвёртым параметром!
-  itoa(zepperMode, buffers, 10);
-  queryOne += String(buffers);
-
+  // Формируем строки запросов к таблицам базы данных
+  itoa(numerInTable, buffers, 10);
+  queryOne  += String(buffers);
+  queryTwo  += String(buffers);
+  queryTree += String(buffers);
+  queryFour += String(buffers);
+  queryFive += String(buffers);
+/*
+  int zepDbFreq[42];
+  int zepDbExpo[42];
+  int zepDbPause[42];
+  int zepDbModeGen[42];
+  int zepDbModeSig[42];
+ */ 
+  Serial.println();
+  Serial.print("миллис начала = ");
+  unsigned long gomill = millis();
+  Serial.println(gomill);
+  Serial.println();
+  
+  //заполним массив частот
   rc = sqlite3_exec(db, queryOne.c_str(), callback, zepDbFreq, &zErrMsg);
   if (rc != SQLITE_OK) {
     fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -490,7 +520,76 @@ int readSQLite3() {
       printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
     }
   }
-  Serial.println(queryOne);
+  Serial.print(queryOne);
+  Serial.println("  - Обработан");
+
+  //заполним массив экспозиций
+  rc = sqlite3_exec(db, queryTwo.c_str(), callback, zepDbExpo, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbExpo) / sizeof(zepDbExpo[0]); i++) {
+      printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
+    }
+  }
+  Serial.print(queryTwo);
+  Serial.println("  - Обработан");
+
+  //заполним массив пауз
+  rc = sqlite3_exec(db, queryTree.c_str(), callback, zepDbPause, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbPause) / sizeof(zepDbPause[0]); i++) {
+      printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
+    }
+  }
+  Serial.print(queryTree);
+  Serial.println("  - Обработан");
+
+  //заполним массив режимов генератора
+  rc = sqlite3_exec(db, queryFour.c_str(), callback, zepDbModeGen, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbModeGen) / sizeof(zepDbModeGen[0]); i++) {
+      printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
+    }
+  }
+  Serial.print(queryFour);
+  Serial.println("  - Обработан");
+
+  //заполним массив режимов вида сигнала генератора
+  rc = sqlite3_exec(db, queryFive.c_str(), callback, zepDbModeSig, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbModeSig) / sizeof(zepDbModeSig[0]); i++) {
+      printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
+    }
+  }
+  Serial.print(queryFive);
+  Serial.println("  - Обработан");
+
+  Serial.println();
+  Serial.print("миллис окончания = ");
+  Serial.println(millis());
+  Serial.print("Время обработки базы = ");
+  Serial.print((float)(millis()-gomill)/1000,3);
+  Serial.println(" сек");
+  Serial.println();
 
   sqlite3_close(db);
   return 0;
@@ -885,7 +984,9 @@ void setup() {
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
 
-  SPI.begin();    // Для библиотеки MCP4xxxx обязательно!!!
+  //SPI.begin();    // Для библиотеки MCP4xxxx обязательно было, теперь нельзя!!!
+  Potentiometer.begin();
+  Alc.begin();
 
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
@@ -917,6 +1018,7 @@ void setup() {
   testTFT();
   // Читаем базу
   readSQLite3();
+  /*
   for (int i = 0; i < 42; i++) {
     Serial.print("f");
     Serial.print(i + 1);
@@ -925,7 +1027,7 @@ void setup() {
   }
 
   Serial.println(queryOne);
-
+  */
 }  //******** END SETUP ********//
 
 
