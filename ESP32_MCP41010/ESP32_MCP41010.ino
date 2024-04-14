@@ -746,8 +746,8 @@ void setAlcFreq(long freq) { // Установка по измеренному �
     if(freq >= 850000)alc = 213;
     if(freq >= 900000)alc = 226;
     if(freq >= 950000)alc = 240;
-    if(freq >= 1000000)alc = 255;
-  Alc.writeValue(alc);
+    if(freq >= 1000000)alc = 254;
+  Alc.writeValue(255-alc);
   delay(10);
 }
 
