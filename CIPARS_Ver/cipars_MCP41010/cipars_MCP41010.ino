@@ -1,6 +1,6 @@
 // Генератор для катушки Мишина на основе DDS AD9833
 // Скетч работает с потенциометрами MCP41010!
-// Библиотека MCP4xxxx требует запуска SPI(begin);  в setup() до начала использования
+// Библиотека MCP4xxxx требует инициализации (см. Alc.begin())
 
 
 // Определения
@@ -74,11 +74,11 @@ bool SbLong = false;
 
 
 #ifndef LCD_RUS
-#define I2C_ADDR 0x3F  //0x3F 0x27
+#define I2C_ADDR 0x27  //0x3F 0x27
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
 #else
-#define I2C_ADDR 0x3F  //0x3F 0x27
+#define I2C_ADDR 0x27  //0x3F 0x27
 #include <LCD_1602_RUS.h>
 LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #endif
@@ -145,26 +145,26 @@ void setALC(int setAlc) { // Установка по измеренному ур
 
 void setAlcFreq(long freq) { // Установка по измеренному уровню сигнала
    int alc;
-   if(freq <= 50000)alc = 0;
-    if(freq <= 100000)alc = 14;
-    if(freq <= 150000)alc = 27;
-    if(freq <= 200000)alc = 40;
-    if(freq <= 250000)alc = 53;
-    if(freq <= 300000)alc = 66;
-    if(freq <= 350000)alc = 80;
-    if(freq <= 400000)alc = 93;
-    if(freq <= 450000)alc = 106;
-    if(freq <= 500000)alc = 120;
-    if(freq <= 550000)alc = 133;
-    if(freq <= 600000)alc = 146;
-    if(freq <= 650000)alc = 160;
-    if(freq <= 700000)alc = 173;
-    if(freq <= 750000)alc = 186;
-    if(freq <= 800000)alc = 200;
-    if(freq <= 850000)alc = 213;
-    if(freq <= 900000)alc = 226;
-    if(freq <= 950000)alc = 240;
-    if(freq <= 1000000)alc = 255;
+   if(freq >= 50000)alc = 0;
+    if(freq >= 100000)alc = 14;
+    if(freq >= 150000)alc = 27;
+    if(freq >= 200000)alc = 40;
+    if(freq >= 250000)alc = 53;
+    if(freq >= 300000)alc = 66;
+    if(freq >= 350000)alc = 80;
+    if(freq >= 400000)alc = 93;
+    if(freq >= 450000)alc = 106;
+    if(freq >= 500000)alc = 120;
+    if(freq >= 550000)alc = 133;
+    if(freq >= 600000)alc = 146;
+    if(freq >= 650000)alc = 160;
+    if(freq >= 700000)alc = 173;
+    if(freq >= 750000)alc = 186;
+    if(freq >= 800000)alc = 200;
+    if(freq >= 850000)alc = 213;
+    if(freq >= 900000)alc = 226;
+    if(freq >= 950000)alc = 240;
+    if(freq >= 1000000)alc = 255;
   Alc.writeValue(alc);
   delay(10);
 }
@@ -941,13 +941,13 @@ m1:
     Serial.print(tstFreq / 1000, 3);
     Serial.println("KHz");
     lcd.setCursor(0, 0);
-    lcd.print("Freq=");
+    lcd.print(F("Freq="));
     lcd.print(tstFreq / 1000, 3);
-    lcd.print("KHz");
+    lcd.print(F("KHz"));
     delay(1000);
   }
   lcd.setCursor(0, 0);
-  lcd.print("                ");
+  lcd.print(F("                "));
  // goto m1;
 }
 
