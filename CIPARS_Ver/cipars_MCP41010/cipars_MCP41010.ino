@@ -4,9 +4,10 @@
 
 
 // Определения
-#define DEBUG                            // Замаркировать если не нужны тесты
-// По умолчанию дисплей имеет адрес 0X27, исправить на свой
-#define LCD_RUS                            // Замаркировать, если скетч не для LCD_RUS
+#define DEBUG                          // Замаркировать если не нужны тесты
+//                                     // По умолчанию дисплей имеет адрес 0X27, 
+//                                     // исправить на свой!!!
+#define LCD_RUS                        // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -464,7 +465,8 @@ void setup() {
   lcd.print("Generator MCP");
   delay(100);
 
-  SPI.begin();
+  //SPI.begin();
+  Potentiometer.begin();
   // сбрасываем потенциометр в 0%
   resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
