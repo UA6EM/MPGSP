@@ -953,7 +953,7 @@ m1:
 
 
 /*
-   A0 - MCP41x1_CS       CS
+   A0 - MCP41x1_CS       CS MCP41010 Volume
    A1 - AD9833_MOSI      AD9833_SDATA
    A2 - AD9833_SCK       AD9833_SCLK
    A3 - AD9833_CS        AD9833_FSYNC
@@ -964,14 +964,14 @@ m1:
    D0 - RX
    D1 - TX
    D2 - RELE ZEPPER
-   D3 - PWM, tic.encoder() (not connected)
+   D3 - PWM, tic.encoder() (not connected)нельзя использовать там 490Hz
    D4 -
    D5 - LT1206_SHUTDOWN
    D6 - ENC_DT
    D7 - ENC_CLK
    D8 - ENC_SW
    D9 - BUZZER
-   D10 -
+   D10 - MCP41010_ALC CS    CS MCP41010 ALC
    D11 - MCP41x1_MOSI MOSI  SDI/SDO
    D12 - MCP41x1_MISO MISO  only shematic diagram to SDI/SDO
    D13 - MCP41x1_SCK  SCK   SCK
