@@ -73,11 +73,11 @@ bool SbLong = false;
 
 
 #ifndef LCD_RUS
-#define I2C_ADDR 0x27  //0x3F 0x27
+#define I2C_ADDR 0x3F  //0x3F 0x27
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd(I2C_ADDR, 16, 2);
 #else
-#define I2C_ADDR 0x27  //0x3F 0x27
+#define I2C_ADDR 0x3F  //0x3F 0x27
 #include <LCD_1602_RUS.h>
 LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
 #endif
