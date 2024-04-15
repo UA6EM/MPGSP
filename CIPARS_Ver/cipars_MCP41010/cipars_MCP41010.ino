@@ -7,7 +7,7 @@
 //#define DEBUG                          // Замаркировать если не нужны тесты
 //                                     // По умолчанию дисплей имеет адрес 0X27, 
 //                                     // исправить на свой!!!
-#define LCD_RUS                        // Замаркировать, если скетч не для LCD_RUS
+//#define LCD_RUS                        // Замаркировать, если скетч не для LCD_RUS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -69,7 +69,7 @@ const byte maxTimers = 4;
 int timerPosition = 0;
 volatile int newEncoderPos;            // Новая позиция энкодера
 static int currentEncoderPos = 0;      // Текущая позиция энкодера
-volatile  int d_resis = 127;
+volatile  int d_resis = 255;
 bool SbLong = false;
 
 
