@@ -271,7 +271,7 @@ void testTFT() {
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
 
-  while (millis() - ttt < 60000) {
+  while (millis() - ttt < 10000) {
     if (targetTime < millis()) {
       targetTime += 1000;
       ss++;              // Advance second
@@ -1072,7 +1072,7 @@ void setup() {
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
 #ifdef DEBUG
-  testMCP41010();
+ // testMCP41010();
 #endif
   wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
@@ -1384,7 +1384,7 @@ void readDamp(int pw) {
   } else {
     Serial.println("STATIC");
     Serial.print("Мощность выхода = ");
-    Serial.println(currentEncoderPos);
+    Serial.println(currentEncoderPos + pw);
   }
 #endif
 }
