@@ -351,7 +351,7 @@ String queryGen = "SELECT * FROM modesgen WHERE id = ";
 String querySig = "SELECT * FROM modessig WHERE id = ";
 
 //const char* DBName = "/spiffs/zepper.db";
-const char* DBName = "/spiffs/standard.db";
+const char* DBName = "/spiffs/std.db";
 
 struct  {
   int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
