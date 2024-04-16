@@ -92,7 +92,7 @@ Ticker my_encoder;
 float encPeriod = 0.05;
 #endif
 
-#define PIN_RELE 2
+#define PIN_RELE 26
 
 //AD9833
 //#define AD9833_MISO 12
@@ -1393,7 +1393,7 @@ void readDamp(int pw) {
 
 /*
   G1 - TX
-  G2 - PIN_RELE    2 <-> RELAY
+  G2 - 
   G3 - RX
   g4 -
   G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
@@ -1417,7 +1417,7 @@ void readDamp(int pw) {
   G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
   G24 -
   G25 -
-  G26 -
+  G26 - PIN_RELE    26 <-> RELAY
   G27 -
   G28 -
   G29 -

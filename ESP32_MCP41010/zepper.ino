@@ -49,7 +49,7 @@ void goZepper() {
         }
       } else {                                  // *** Режим меандра ***
         digitalWrite(PIN_RELE, HIGH);            // Выход реле (NO)
-        int power = 12;                          // Очки, половинная мощность (5 вольт)
+        int power = 12;                          // ZEPPER, полная мощность (12 вольт)
         setResistance(map(power, 0, 12, 0, 100));
         Serial.print("U = ");
         Serial.println(map(power, 0, 12, 0, 100));
