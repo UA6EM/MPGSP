@@ -38,7 +38,7 @@
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
-//#define DEBUG                          // Замаркировать если не нужны тесты
+#define DEBUG                          // Замаркировать если не нужны тесты
 #define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -1105,9 +1105,11 @@ void loop() {
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
 #ifdef LCD_RUS
-    setZepper();
+    goZepper();
+   // setZepper();
 #else
-    setZepper1();
+    goZepper();
+  //  setZepper1();
 #endif
   }
 
