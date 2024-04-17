@@ -288,7 +288,7 @@ void testTFT(int times) {
     // tft.drawPixel(x0, yy0, TFT_WHITE);
     // Draw main quadrant dots
  //   if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
-   if (i == (mm +(times/1000/60))) tft.fillCircle(x0, yy0, 2, TFT_ORANGE);
+   if (i == (mm +(times/1000/10))) tft.fillCircle(x0, yy0, 3, TFT_ORANGE);
   }
   
   targetTime = millis() + 1000;
