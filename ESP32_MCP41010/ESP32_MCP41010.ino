@@ -228,6 +228,7 @@ uint32_t targetTime = 0;                    // for next 1 second timeout
 static uint8_t conv2d(const char* p);       // Forward declaration needed for IDE 1.6.x
 //uint8_t hh = conv2d(__TIME__), mm = conv2d(__TIME__ + 3), ss = conv2d(__TIME__ + 6); // Get H, M, S from compile time
 uint8_t hh = 12, mm = 0, ss = 0; // Get H, M, S from compile time
+static int old_mm = 0;
 
 bool initial = 1;
 bool isduble = false;
@@ -279,7 +280,7 @@ void testTFT(int times) {
   }
 
     // Draw expositions dots
-  for (int i = 0; i < 360; i += 6) {
+  for (int i = 0; i < 360; i ++) {
     sx = cos((i - 90) * 0.0174532925);
     sy = sin((i - 90) * 0.0174532925);
     x0 = sx * 102 + 120;
@@ -288,8 +289,16 @@ void testTFT(int times) {
     // tft.drawPixel(x0, yy0, TFT_WHITE);
     // Draw main quadrant dots
  //   if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
-   if (i == (mm +(times/1000/10))) tft.fillCircle(x0, yy0, 3, TFT_ORANGE);
+   if(old_mm > 0){
+     if (i == old_mm){
+      tft.fillCircle(x0, yy0, 7, TFT_BLUE);
+      tft.fillCircle(x0, yy0, 3, TFT_YELLOW);
+     }
+   }
+   if (i == (mm*6 +(times/1000/10))) tft.fillCircle(x0, yy0, 7, TFT_ORANGE);
+   if (i == (mm*6 +(times/1000/10))) tft.fillCircle(x0, yy0, 3, TFT_RED);
   }
+ old_mm = (mm*6 +(times/1000/10));
   
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
