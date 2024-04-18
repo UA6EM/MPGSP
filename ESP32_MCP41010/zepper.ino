@@ -1,159 +1,61 @@
-void goZepper() {
-  int sst = 0;   // возьмём нулевой элемент массива
-  bool fgen = false; // синус / меандр = true (отслеживание смены режима)
-
-  do {
-    printStruct();
-
-    if (Cicle.Freq > 0) {                      // Если в массиве частота не 0 то работаем по циклограмме
-      // Режим генератора синус/меандр
-      if (fgen != Cicle.ModeGen) {             // смена режима, пауза, зумм 5 секунд
-        fgen = Cicle.ModeGen;
-        Serial.println("Смена режима выхода");
-        start_Buzzer();                        // Звуковой сигнал
-        testTFT(10 * 1000);
-        //delay(5000);
-        Serial.println("Конец паузы 10 секунд");
-        stop_Buzzer();
-      }
-
-      if (!fgen) {                              // *** Режим синуса ***
-        digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
-        int power = 20;                         // Очки, половинная мощность (5 вольт) - 20%
-        setResistance(map(power, 0, 100, 0, d_resis));
-        Serial.print("U = ");
-        Serial.print(power);
-        Serial.println(" %");
-
-        digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
-        Serial.print("Частота ");
-        Serial.print((float)Cicle.Freq / 1000, 3);
-        Serial.println(" KHz");
-        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
-
-        lcd.setCursor(0, 0);
-        lcd.print("  F - ");
-        lcd.print((float)Cicle.Freq / 1000, 3);
-        lcd.print(" KHz  ");
-        lcd.setCursor(0, 1);
-        lcd.print("ЖдёM ");
-        lcd.print(Cicle.Exposite / 60);
-        lcd.print("-е минуты");
-        testTFT(Cicle.Exposite * 1000);
-        //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
-
-        if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
-          Serial.print("Пауза ");
-          Serial.print(Cicle.Pause);
-          Serial.println(" секунд");
-          digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
-          testTFT(Cicle.Pause * 1000);
-          //delay(Cicle.Pause * 1000);
-          digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        }
-      } else {                                  // *** Режим меандра ***
-        digitalWrite(PIN_RELE, HIGH);            // Выход реле (NO)
-        int power = 50;                          // ZEPPER, полная мощность (12 вольт) - УТОЧНИТЬ!!!
-        setResistance(map(power, 0, 100, 0, d_resis));
-        Serial.print("U = ");
-        Serial.print(power);
-        Serial.println(" %");
-
-        digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
-        Serial.print("Частота ");
-        Serial.print((float)Cicle.Freq / 1000, 3);
-        Serial.println(" KHz");
-        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
-
-        lcd.setCursor(0, 0);
-        lcd.print("  F - ");
-        lcd.print((float)Cicle.Freq / 1000, 3);
-        lcd.print(" KHz  ");
-        lcd.setCursor(0, 1);
-        lcd.print("ЖдёM ");
-        lcd.print(Cicle.Exposite / 60);
-        lcd.print("-е минуты");
-        testTFT(Cicle.Exposite * 1000);
-        // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
-
-        if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
-          Serial.print("Пауза ");
-          Serial.print(Cicle.Pause);
-          Serial.println(" секунд");
-          digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
-          testTFT(Cicle.Pause * 1000);
-          // delay(Cicle.Pause * 1000);
-          digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        }
-      }
-      sst += 1;
-      setStructure(sst); // Заполним структуру из массивов
-
-    }
-  } while (Cicle.Freq > 0 );
-
-  printStruct();
-  Serial.println("Сеанс окончен");
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода OFF
-  digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
-  sst = 0;
-
-  // В структуру восстановить первую запись
-  setStructure(sst);
-
-  isWorkStarted = false; // рабочий режим окончен
-}
-void setStructure(int strc) {
-  Cicle.ModeGen  = zepDbModeGen[strc];
-  Cicle.ModeSig  = zepDbModeSig[strc];
-  Cicle.Freq     = zepDbFreq[strc];
-  Cicle.Exposite = zepDbExpo[strc];
-  Cicle.Pause    = zepDbPause[strc];
-}
 /*
-  for (int i = 0; i < 42; i++) {
-  Serial.print("f");
-  Serial.print(i + 1);
-  Serial.print(" = ");
-  Serial.println(zepDbFreq[i]);
-  }
+  G0 - TFT CS
+  G1 - TX
+  G2 - <-> TFT_CS
+  G3 - RX
+  g4 - <-> TFT_DC
+  G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
+  G6 -
+  G7 -
+  G8 -
+  G9 -
+  G10 -
+  G11 -
+  G12 - AD9833_MISO 12  X  NOT CONNECTED
+  G13 - AD9833_MOSI 13 <-> AD9833_SDATA  <-> TFT_MOSI
+  G14 - AD9833_SCK  14 <-> AD9833_SCLK   <-> TFT_SCK
+  G15 - AD9833_CS   15 <-> AD9833_FSYNC
+  G16 - - - - - - - - - - - - - - - - -  <-> TFT_RST
+  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
+  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
+  G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010
+  G20 -
+  G21 - SDA // LCD, INA219
+  G22 - SCK // LCD, INA219
+  G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
+  G24 -
+  G25 -
+  G26 - PIN_RELE    26 <-> RELAY
+  G27 -
+  G28 -
+  G29 -
+  G30 -
+  G31 -
+  G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
+  G33 - PIN_ZUM                   33 <-> BUZZER
+  G34 - ROTARY_ENCODER_A_PIN      34 <-> ENC_CLK
+  G35 - ROTARY_ENCODER_B_PIN      35 <-> ENC_DT
+  G36 - ROTARY_ENCODER_BUTTON_PIN 36 <-> ENC_SW
 
-  Serial.println(queryFreq);
-*/
-/*
-  Cicle.ModeGen  = zepDbModeGen[sstruc];
-  Cicle.ModeSig  = zepDbModeSig[sstruc];
-  Cicle.Freq     = zepDbFreq[sstruc];
-  Cicle.Exposite = zepDbExpo[sstruc];
-  Cicle.Pause    = zepDbPause[sstruc];
+  G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
 
-  struct  {
-  int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
-  int ModeSig;   // 0 - OFF, 1 - SINE, 2 - QUADRE1, 3 - QUADRE2, 4 - TRIANGLE
-  int Freq;      // Частота сигнала
-  int Exposite;  // Время экспозиции
-  int Pause;     // Пауза после отработки времени экспозиции
-  } Cicle;
-
-
-      Cicle.ModeGen  = zepDbModeGen[sst];
-      Cicle.ModeSig  = zepDbModeSig[sst];
-      Cicle.Freq     = zepDbFreq[sst];
-      Cicle.Exposite = zepDbExpo[sst];
-      Cicle.Pause    = zepDbPause[sst];
-
-      void setCicleStructure() {
-  static int sstruc; // = 0;
-  Cicle.ModeGen  = zepDbModeGen[sstruc];
-  Cicle.ModeSig  = zepDbModeSig[sstruc];
-  Cicle.Freq     = zepDbFreq[sstruc];
-  Cicle.Exposite = zepDbExpo[sstruc];
-  Cicle.Pause    = zepDbPause[sstruc];
-
-  // Напечатать данные в структуре
-  printStruct();
-
-  }
+  //  Пины модуля 1 - 38
+  3 - ENC_SW
+  4 - SENS_IMPLOSION
+  5 - ENC_DT
+  6 - ENC_CLK
+  7 - LT1206_SHUTDIWN
+  8 - BUZZER
+  12 - AD9833_SCLK
+  15 - AD9833_SDATA
+  19 - +5V
+  20 - GND
+  21 - MCP41010_SDATA
+  22 - SCL
+  25 - SDA
+  28 - MCP41010_SCLK
+  29 - 2_MCP_CS
+  30 - MCP41010_ALC
+  34 - RELAY
+  35 - AD9833_FSYNC
 */

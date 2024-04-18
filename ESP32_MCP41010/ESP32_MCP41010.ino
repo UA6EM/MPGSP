@@ -361,21 +361,24 @@ static uint8_t conv2d(const char* p) {
     v = *p - '0';
   return 10 * v + *++p - '0';
 }
+// ******************* КОНЕЦ БЛОКА ФУНКЦИЙ ПО РАБОТЕ С ЧАСИКАМИ ******************//
 
 
+// ******************** БЛОК ФУНКЦИЙ ПО РАБОТЕ В БАЗОЙ ДАННЫХ ********************//
 #define FORMAT_SPIFFS_IF_FAILED true
 
-int zepDbFreq[42];
-int zepDbExpo[42];
-int zepDbPause[42];
-int zepDbModeGen[42];
-int zepDbModeSig[42];
+int zepDbFreq[42];    // массив из таблицы частот
+int zepDbExpo[42];    // массив из таблицы экспозиций
+int zepDbPause[42];   // массив из таблицы пауз
+int zepDbModeGen[42]; // массив из таблицы режима генератора
+int zepDbModeSig[42]; // массив из таблицы вида формируемого сигнала
 
 char *zErrMsg = 0;
 char buffers[33];
 
 int numerInTable = 1;
 
+// Строки запроса к таблица (заготовка) к ней добавляется id
 String queryFreq = "SELECT * FROM frequencys WHERE id = ";
 String queryExpo = "SELECT * FROM expositions WHERE id = ";
 String queryPause = "SELECT * FROM pauses WHERE id = ";
@@ -389,57 +392,10 @@ const char* DBName = "/spiffs/standard.db";
 struct  {
   int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
   int ModeSig;   // 0 - OFF, 1 - SINE, 2 - QUADRE1, 3 - QUADRE2, 4 - TRIANGLE
-  int Freq;      // Частота сигнала
-  int Exposite;  // Время экспозиции
-  int Pause;     // Пауза после отработки времени экспозиции
+  int Freq;      // Частота сигнала (long, float)
+  int Exposite;  // Время экспозиции в секундах
+  int Pause;     // Пауза после отработки времени экспозиции в секундах
 } Cicle;
-
-struct  {
-  int id = 1;
-  char names[30] = "Abdominal inflammation";
-  int f1 = 2720;
-  int f2 = 2489;
-  int f3 = 2170;
-  int f4 = 2000;
-  int f5 = 1865;
-  int f6 = 1800;
-  int f7 = 1600;
-  int f8 = 1550;
-  int f9 = 880;
-  int f10 = 832;
-  int f11 = 802;
-  int f12 = 787;
-  int f13 = 776;
-  int f14 = 727;
-  int f15 = 660;
-  int f16 = 465;
-  int f17 = 450;
-  int f18 = 444;
-  int f19 = 440;
-  int f20 = 428;
-  int f21 = 380;
-  int f22 = 250;
-  int f23 = 146;
-  int f24 = 125;
-  int f25 = 95;
-  int f26 = 72;
-  int f27 = 20;
-  int f28 = 1;
-  int f29 = 0;
-  int f30 = 0;
-  int f31 = NULL;
-  int f32 = NULL;
-  int f33 = NULL;
-  int f34 = NULL;
-  int f35 = NULL;
-  int f36 = NULL;
-  int f37 = NULL;
-  int f38 = NULL;
-  int f39 = NULL;
-  int f40 = NULL;
-  int f41 = NULL;
-  int f42 = NULL;
-} myDB;
 
 // Универсальный callback
 // Вызывается столько раз, сколько строк вернул запрос. Т.е. один вызов на строку!
@@ -477,155 +433,6 @@ int db_open(const char *filename, sqlite3 **db) {
   return rc;
 }
 
-int readSQLite3() {
-  printf("Go on!!!\n\n");
-
-  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
-    Serial.println("Failed to mount file system");
-    return 0;
-  }
-
-  // list SPIFFS contents
-  File root = SPIFFS.open("/");
-  if (!root) {
-    Serial.println("- failed to open directory");
-    return 0;
-  }
-
-  if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
-    return 0;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-      Serial.print("\tSIZE: ");
-      Serial.println(file.size());
-    }
-    file = root.openNextFile();
-  }
-
-  sqlite3* db;
-  sqlite3_initialize();
-  int rc = sqlite3_open(DBName /*"/spiffs/zepper.db"*/, &db);
-  if (rc) {
-    printf("Can't open database: %s\n", sqlite3_errmsg(db));
-    sqlite3_close(db);
-    return (1);
-  }
-
-  // Принимающий массив передаётся чертвёртым параметром!
-  // Формируем строки запросов к таблицам базы данных
-  itoa(numerInTable, buffers, 10);
-  queryFreq  += String(buffers);
-  queryExpo  += String(buffers);
-  queryPause += String(buffers);
-  queryGen   += String(buffers);
-  querySig   += String(buffers);
-
-  Serial.println();
-  Serial.print("миллис начала = ");
-  unsigned long gomill = millis();
-  Serial.println(gomill);
-  Serial.println();
-
-  //заполним массив частот
-  rc = sqlite3_exec(db, queryFreq.c_str(), callback, zepDbFreq, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbFreq) / sizeof(zepDbFreq[0]); i++) {
-      printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
-    }
-  }
-  Serial.print(queryFreq);
-  Serial.println("  - Обработан");
-
-  //заполним массив экспозиций
-  rc = sqlite3_exec(db, queryExpo.c_str(), callback, zepDbExpo, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbExpo) / sizeof(zepDbExpo[0]); i++) {
-      printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
-    }
-  }
-  Serial.print(queryExpo);
-  Serial.println("  - Обработан");
-
-  //заполним массив пауз
-  rc = sqlite3_exec(db, queryPause.c_str(), callback, zepDbPause, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbPause) / sizeof(zepDbPause[0]); i++) {
-      printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
-    }
-  }
-  Serial.print(queryPause);
-  Serial.println("  - Обработан");
-
-  //заполним массив режимов генератора
-  rc = sqlite3_exec(db, queryGen.c_str(), callback, zepDbModeGen, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbModeGen) / sizeof(zepDbModeGen[0]); i++) {
-      printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
-    }
-  }
-  Serial.print(queryGen);
-  Serial.println("  - Обработан");
-
-  //заполним массив режимов вида сигнала генератора
-  rc = sqlite3_exec(db, querySig.c_str(), callback, zepDbModeSig, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbModeSig) / sizeof(zepDbModeSig[0]); i++) {
-      printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
-    }
-  }
-  Serial.print(querySig);
-  Serial.println("  - Обработан");
-
-  Serial.println();
-  Serial.print("миллис окончания = ");
-  Serial.println(millis());
-  Serial.print("Время обработки базы = ");
-  Serial.print((float)(millis() - gomill) / 1000, 3);
-  Serial.println(" сек");
-  Serial.println();
-
-  sqlite3_close(db);
-  setStructure(0);
-  printStruct();
-  
-  return 0;
-}    // ************** END SQLITE3 *************** //
-
-
 void printStruct() {
 #ifdef DEBUG
   Serial.print("Cicle.ModeGen  = ");
@@ -644,6 +451,8 @@ void printStruct() {
   Serial.println(Cicle.Pause);
 #endif
 }
+// ******************* КОНЕЦ БЛОКА ФУНКЦИЙ ПО РАБОТЕ С БАЗОЙ  ******************//
+
 
 /*** Обработчик кнопки энкодера ***/
 //------Cl_Btn----------------------
@@ -779,24 +588,6 @@ void setTimer() {
   memTimers = availableTimers[timerPosition];
 }
 
-void testMCP41010() {
-  d_resis = 255;
-
-  Serial.println("START Test MCP41010");
-  for (int i = 0; i < d_resis; i++) {
-    Potentiometer.writeValue(i);
-    delay(100);
-    Serial.print("MCP41010 = ");
-    Serial.println(i);
-  }
-  for (int j = d_resis; j >= 1; --j) {
-    Potentiometer.writeValue(j);
-    delay(100);
-    Serial.print("MCP41010 = ");
-    Serial.println(j);
-  }
-  Serial.println("STOP Test MCP41010");
-}
 
 void resetPotenciometer() {
   // Понижаем сопротивление до 0%:
@@ -1164,292 +955,121 @@ void loop() {
 
 
 // ***************** Функция Цеппера ****************
-void setZepper() {
-  digitalWrite(PIN_RELE, HIGH);
-  int power = 5;   // Очки, половинная мощность (5 вольт)
-  setResistance(map(power, 0, 12, 0, 100));
-  Serial.print("U = ");
-  Serial.println(map(power, 0, 12, 0, 100));
+void goZepper() {
+  int sst = 0;   // возьмём нулевой элемент массива
+  bool fgen = false; // синус / меандр = true (отслеживание смены режима)
 
-  long zepFreq = 473000;
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 473 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 473 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print("ЖдёM 2-е Mинуты");
-  delay(120000);
-  zepFreq = 395000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 395 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 395 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-  zepFreq = 403850;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 403.85 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("F - 403.85 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-  zepFreq = 397600;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 397.6 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print(" F - 397.6 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print("Ждём 2-е минуты");
-  delay(120000);
-
-  start_Buzzer(); // Звуковой сигнал взять электроды
-  delay(5000);
-  stop_Buzzer();
-
-  power = 12;  // Электроды, полная мощность
-  setResistance(map(power, 0, 12, 0, 100));
-
-  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 30 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("   F - 30 KHz   ");
-  lcd.setCursor(0, 1);
-  lcd.print("  Ждём 7 минут  ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Перерыв 20 минут");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("     IS OFF     ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Отдых 20 минут ");
-  delay(1200000);
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 30 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("   F - 30 KHz   ");
-  lcd.setCursor(0, 1);
-  lcd.print("  Ждём 7 минут  ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Сеанс окончен");
-
-  lcd.setCursor(0, 0);
-  lcd.print(" Сеанс окончен  ");
-  lcd.setCursor(0, 1);
-  lcd.print("Выключите прибор");
-  delay(5000);
-  lcd.setCursor(0, 0);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
-  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
-  readDamp(map(power, 0, 12, 0, 100));
-}
-
-void setZepper1() {
-  digitalWrite(PIN_RELE, HIGH);
-  int power = 5;   // Очки, половинная мощность (5 вольт)
-  setResistance(map(power, 0, 12, 0, 100));
-  Serial.print("U = ");
-  Serial.println(map(power, 0, 12, 0, 100));
-
-  long zepFreq = 473000;
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 473 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 473 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 2 minutes");
-  delay(120000);
-  zepFreq = 395000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 395 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("  F - 395 KHz  ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 2 minutes");
-  delay(120000);
-  zepFreq = 403850;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 403.85 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("F - 403.85 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 2 minutes");
-  delay(120000);
-  zepFreq = 397600;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 397.6 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print(" F - 397.6 KHz ");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 2 minutes");
-  delay(120000);
-
-  start_Buzzer(); // Звуковой сигнал взять электроды
-  delay(5000);
-  stop_Buzzer();
-
-  power = 12;  // Электроды, полная мощность
-  setResistance(map(power, 0, 12, 0, 100));
-  digitalWrite(PIN_RELE, HIGH); // Переключим выход генератора на Электроды
-
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Частота 30 KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("Frequency 30KHz");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 7 minutes ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Перерыв 20 минут");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("     IS OFF     ");
-  lcd.setCursor(0, 1);
-  lcd.print("Wait  20 minutes");
-  delay(1200000);
-  digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-  zepFreq = 30000;
-  Ad9833.setFrequency(zepFreq, AD9833_SQUARE1);
-  Serial.println("Frequency 30KHz");
-  readDamp(map(power, 0, 12, 0, 100));
-
-  lcd.setCursor(0, 0);
-  lcd.print("Frequency 30 KHz");
-  lcd.setCursor(0, 1);
-  lcd.print(" Wait 7 minutes ");
-  delay(420000);
-  digitalWrite(ON_OFF_CASCADE_PIN, LOW);
-  Serial.println("Сеанс окончен");
-  lcd.setCursor(0, 0);
-  lcd.print(" Session  over  ");
-  lcd.setCursor(0, 1);
-  lcd.print("Turn off  device");
-  delay(5000);
-  lcd.setCursor(0, 0);
-  lcd.print("                ");
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  Ad9833.setFrequency(FREQ_MIN, AD9833_SINE);
-  digitalWrite(PIN_RELE, LOW); // Переключим выход генератора на катушку
-  readDamp(map(power, 0, 12, 0, 100));
-}
-
-
-void readDamp(int pw) {
-#ifdef DEBUG
-  Serial.println();
-  Serial.print("Разрешение выхода = ");
-  Serial.println(digitalRead(ON_OFF_CASCADE_PIN));
-  Serial.print("Выходной разъём = ");
-  if (digitalRead(PIN_RELE)) {
-    Serial.println("ZEPPER");
-    Serial.print("U = ");
-    Serial.println(pw);
-  } else {
-    Serial.println("STATIC");
-    Serial.print("Мощность выхода = ");
-    Serial.println(currentEncoderPos + pw);
-  }
-  Serial.println();
+  do {
+#ifdef DEBUG    
+    printStruct();
 #endif
+
+    if (Cicle.Freq > 0) {                      // Если в массиве частота не 0 то работаем по циклограмме
+      // Режим генератора синус/меандр
+      if (fgen != Cicle.ModeGen) {             // смена режима, пауза, зумм 5 секунд
+        fgen = Cicle.ModeGen;
+        Serial.println("Смена режима выхода");
+        start_Buzzer();                        // Звуковой сигнал
+        //testTFT(10 * 1000);
+        delay(10000);
+        Serial.println("Конец паузы 10 секунд");
+        stop_Buzzer();
+      }
+
+      if (!fgen) {                              // *** Режим синуса ***
+        digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
+        int power = 20;                         // Очки, половинная мощность (5 вольт) - 20%
+        setResistance(map(power, 0, 100, 0, d_resis));
+        Serial.print("U = ");
+        Serial.print(power);
+        Serial.println(" %");
+
+        digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+        Serial.print("Частота ");
+        Serial.print((float)Cicle.Freq / 1000, 3);
+        Serial.println(" KHz");
+        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
+
+        lcd.setCursor(0, 0);
+        lcd.print("  F - ");
+        lcd.print((float)Cicle.Freq / 1000, 3);
+        lcd.print(" KHz  ");
+        lcd.setCursor(0, 1);
+        lcd.print("ЖдёM ");
+        lcd.print(Cicle.Exposite / 60);
+        lcd.print("-е минуты");
+        testTFT(Cicle.Exposite * 1000);
+        //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
+
+        if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
+          Serial.print("Пауза ");
+          Serial.print(Cicle.Pause);
+          Serial.println(" секунд");
+          digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
+          testTFT(Cicle.Pause * 1000);
+          //delay(Cicle.Pause * 1000);
+          digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+        }
+      } else {                                  // *** Режим меандра ***
+        digitalWrite(PIN_RELE, HIGH);            // Выход реле (NO)
+        int power = 50;                          // ZEPPER, полная мощность (12 вольт) - УТОЧНИТЬ!!!
+        setResistance(map(power, 0, 100, 0, d_resis));
+        Serial.print("U = ");
+        Serial.print(power);
+        Serial.println(" %");
+
+        digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+        Serial.print("Частота ");
+        Serial.print((float)Cicle.Freq / 1000, 3);
+        Serial.println(" KHz");
+        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
+
+        lcd.setCursor(0, 0);
+        lcd.print("  F - ");
+        lcd.print((float)Cicle.Freq / 1000, 3);
+        lcd.print(" KHz  ");
+        lcd.setCursor(0, 1);
+        lcd.print("ЖдёM ");
+        lcd.print(Cicle.Exposite / 60);
+        lcd.print("-е минуты");
+        testTFT(Cicle.Exposite * 1000);
+        // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
+
+        if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
+          Serial.print("Пауза ");
+          Serial.print(Cicle.Pause);
+          Serial.println(" секунд");
+          digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
+          testTFT(Cicle.Pause * 1000);
+          // delay(Cicle.Pause * 1000);
+          digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+        }
+      }
+      sst += 1;
+      setStructure(sst); // Заполним структуру из массивов
+
+    }
+  } while (Cicle.Freq > 0 );
+
+  printStruct();
+  Serial.println("Сеанс окончен");
+  digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода OFF
+  digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
+  sst = 0;
+
+  // В структуру восстановить первую запись
+  setStructure(sst);
+
+  isWorkStarted = false; // рабочий режим окончен
 }
 
 
-/*
-  G0 - TFT CS
-  G1 - TX
-  G2 -
-  G3 - RX
-  g4 -
-  G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
-  G6 -
-  G7 -
-  G8 -
-  G9 -
-  G10 -
-  G11 -
-  G12 - AD9833_MISO 12  X  NOT CONNECTED
-  G13 - AD9833_MOSI 13 <-> AD9833_SDATA
-  G14 - AD9833_SCK  14 <-> AD9833_SCLK
-  G15 - AD9833_CS   15 <-> AD9833_FSYNC
-  G16 -
-  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
-  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
-  G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010
-  G20 -
-  G21 - SDA // LCD, INA219
-  G22 - SCK // LCD, INA219
-  G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
-  G24 -
-  G25 -
-  G26 - PIN_RELE    26 <-> RELAY
-  G27 -
-  G28 -
-  G29 -
-  G30 -
-  G31 -
-  G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
-  G33 - PIN_ZUM                   33 <-> BUZZER
-  G34 - ROTARY_ENCODER_A_PIN      34 <-> ENC_CLK
-  G35 - ROTARY_ENCODER_B_PIN      35 <-> ENC_DT
-  G36 - ROTARY_ENCODER_BUTTON_PIN 36 <-> ENC_SW
-
-  G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
-
-  //  Пины модуля 1 - 38
-  3 - ENC_SW
-  4 - SENS_IMPLOSION
-  5 - ENC_DT
-  6 - ENC_CLK
-  7 - LT1206_SHUTDIWN
-  8 - BUZZER
-  12 - AD9833_SCLK
-  15 - AD9833_SDATA
-  19 - +5V
-  20 - GND
-  21 - MCP41010_SDATA
-  22 - SCL
-  25 - SDA
-  28 - MCP41010_SCLK
-  29 - 2_MCP_CS
-  30 - MCP41010_ALC
-  34 - RELAY
-  35 - AD9833_FSYNC
-*/
+void setStructure(int strc) {
+  Cicle.ModeGen  = zepDbModeGen[strc];
+  Cicle.ModeSig  = zepDbModeSig[strc];
+  Cicle.Freq     = zepDbFreq[strc];
+  Cicle.Exposite = zepDbExpo[strc];
+  Cicle.Pause    = zepDbPause[strc];
+}
