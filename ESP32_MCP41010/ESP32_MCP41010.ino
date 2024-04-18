@@ -234,52 +234,52 @@ bool initial = 1;
 bool isduble = false;
 
 void testTFT(int times) {
-  
-  if(!isduble){
-    
-  isduble = true;
-  tft.init();
-  tft.setRotation(0);
-  //tft.fillScreen(TFT_BLACK);
-  //tft.fillScreen(TFT_RED);
-  //tft.fillScreen(TFT_GREEN);
-  //tft.fillScreen(TFT_BLUE);
-  //tft.fillScreen(TFT_BLACK);
-  tft.fillScreen(TFT_GREY);
-  tft.setTextColor(TFT_WHITE, TFT_GREY);  // Adding a background colour erases previous text automatically
-  // Draw clock face
-  tft.fillCircle(120, 120, 118, TFT_GREEN);
-  tft.fillCircle(120, 120, 110, TFT_BLACK);
-  // Draw 12 lines
-  for (int i = 0; i < 360; i += 30) {
-    sx = cos((i - 90) * 0.0174532925);
-    sy = sin((i - 90) * 0.0174532925);
-    x0 = sx * 114 + 120;
-    yy0 = sy * 114 + 120;
-    x1 = sx * 100 + 120;
-    yy1 = sy * 100 + 120;
-    tft.drawLine(x0, yy0, x1, yy1, TFT_GREEN);
-  }
-  // Draw 60 dots
-  for (int i = 0; i < 360; i += 6) {
-    sx = cos((i - 90) * 0.0174532925);
-    sy = sin((i - 90) * 0.0174532925);
-    x0 = sx * 102 + 120;
-    yy0 = sy * 102 + 120;
-    // Draw minute markers
-    tft.drawPixel(x0, yy0, TFT_WHITE);
-    // Draw main quadrant dots
-    if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
-    if (i == 90 || i == 270) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
-  }
-  tft.fillCircle(120, 121, 3, TFT_WHITE);
-  // Draw text at position 120,260 using fonts 4
-  // Only font numbers 2,4,6,7 are valid. Font 6 only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : . - a p m
-  // Font 7 is a 7 segment font and only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : .
-  tft.drawCentreString("Time flies", 120, 260, 4);
+
+  if (!isduble) {
+
+    isduble = true;
+    tft.init();
+    tft.setRotation(0);
+    //tft.fillScreen(TFT_BLACK);
+    //tft.fillScreen(TFT_RED);
+    //tft.fillScreen(TFT_GREEN);
+    //tft.fillScreen(TFT_BLUE);
+    //tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_GREY);
+    tft.setTextColor(TFT_WHITE, TFT_GREY);  // Adding a background colour erases previous text automatically
+    // Draw clock face
+    tft.fillCircle(120, 120, 118, TFT_GREEN);
+    tft.fillCircle(120, 120, 110, TFT_BLACK);
+    // Draw 12 lines
+    for (int i = 0; i < 360; i += 30) {
+      sx = cos((i - 90) * 0.0174532925);
+      sy = sin((i - 90) * 0.0174532925);
+      x0 = sx * 114 + 120;
+      yy0 = sy * 114 + 120;
+      x1 = sx * 100 + 120;
+      yy1 = sy * 100 + 120;
+      tft.drawLine(x0, yy0, x1, yy1, TFT_GREEN);
+    }
+    // Draw 60 dots
+    for (int i = 0; i < 360; i += 6) {
+      sx = cos((i - 90) * 0.0174532925);
+      sy = sin((i - 90) * 0.0174532925);
+      x0 = sx * 102 + 120;
+      yy0 = sy * 102 + 120;
+      // Draw minute markers
+      tft.drawPixel(x0, yy0, TFT_WHITE);
+      // Draw main quadrant dots
+      if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
+      if (i == 90 || i == 270) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
+    }
+    tft.fillCircle(120, 121, 3, TFT_WHITE);
+    // Draw text at position 120,260 using fonts 4
+    // Only font numbers 2,4,6,7 are valid. Font 6 only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : . - a p m
+    // Font 7 is a 7 segment font and only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : .
+    tft.drawCentreString("Time flies", 120, 260, 4);
   }
 
-    // Draw expositions dots
+  // Draw expositions dots
   for (int i = 0; i < 360; i ++) {
     sx = cos((i - 90) * 0.0174532925);
     sy = sin((i - 90) * 0.0174532925);
@@ -288,18 +288,18 @@ void testTFT(int times) {
     // Draw minute markers
     // tft.drawPixel(x0, yy0, TFT_WHITE);
     // Draw main quadrant dots
- //   if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
-   if(old_mm > 0){
-     if (i == old_mm){
-      tft.fillCircle(x0, yy0, 7, TFT_BLUE);
-      tft.fillCircle(x0, yy0, 3, TFT_YELLOW);
-     }
-   }
-   if (i == (mm*6 +(times/1000/10))) tft.fillCircle(x0, yy0, 7, TFT_ORANGE);
-   if (i == (mm*6 +(times/1000/10))) tft.fillCircle(x0, yy0, 3, TFT_RED);
+    //   if (i == 0 || i == 180) tft.fillCircle(x0, yy0, 2, TFT_WHITE);
+    if (old_mm > 0) {
+      if (i == old_mm) {
+        tft.fillCircle(x0, yy0, 7, TFT_BLUE);
+        tft.fillCircle(x0, yy0, 3, TFT_YELLOW);
+      }
+    }
+    if (i == (mm * 6 + (times / 1000 / 10))) tft.fillCircle(x0, yy0, 7, TFT_ORANGE);
+    if (i == (mm * 6 + (times / 1000 / 10))) tft.fillCircle(x0, yy0, 3, TFT_RED);
   }
- old_mm = (mm*6 +(times/1000/10));
-  
+  old_mm = (mm * 6 + (times / 1000 / 10));
+
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
 
@@ -534,7 +534,7 @@ int readSQLite3() {
   unsigned long gomill = millis();
   Serial.println(gomill);
   Serial.println();
-  
+
   //заполним массив частот
   rc = sqlite3_exec(db, queryFreq.c_str(), callback, zepDbFreq, &zErrMsg);
   if (rc != SQLITE_OK) {
@@ -614,46 +614,35 @@ int readSQLite3() {
   Serial.print("миллис окончания = ");
   Serial.println(millis());
   Serial.print("Время обработки базы = ");
-  Serial.print((float)(millis()-gomill)/1000,3);
+  Serial.print((float)(millis() - gomill) / 1000, 3);
   Serial.println(" сек");
   Serial.println();
 
   sqlite3_close(db);
-
-  setCicleStructure();
+  setStructure(0);
+  printStruct();
+  
   return 0;
-}
+}    // ************** END SQLITE3 *************** //
 
-void setCicleStructure(){
- static int sstruc; // = 0;
- Cicle.ModeGen  = zepDbModeGen[sstruc];
- Cicle.ModeSig  = zepDbModeSig[sstruc];
- Cicle.Freq     = zepDbFreq[sstruc];
- Cicle.Exposite = zepDbExpo[sstruc];
- Cicle.Pause    = zepDbPause[sstruc];
 
- // Напечатать данные в структуре
- printStruct();
- 
-}     // ************** END SQLITE3 *************** //
+void printStruct() {
+#ifdef DEBUG
+  Serial.print("Cicle.ModeGen  = ");
+  Serial.println(Cicle.ModeGen);
 
-void printStruct(){
-  #ifdef DEBUG
- Serial.print("Cicle.ModeGen  = ");
- Serial.println(Cicle.ModeGen);
- 
- Serial.print("Cicle.ModeSig  = ");
- Serial.println(Cicle.ModeSig);
- 
- Serial.print("Cicle.Freq     =");
- Serial.println(Cicle.Freq);
- 
- Serial.print("Cicle.Exposite = ");
- Serial.println(Cicle.Exposite);
- 
- Serial.print("Cicle.Pause    = ");
- Serial.println(Cicle.Pause);
- #endif
+  Serial.print("Cicle.ModeSig  = ");
+  Serial.println(Cicle.ModeSig);
+
+  Serial.print("Cicle.Freq     =");
+  Serial.println(Cicle.Freq);
+
+  Serial.print("Cicle.Exposite = ");
+  Serial.println(Cicle.Exposite);
+
+  Serial.print("Cicle.Pause    = ");
+  Serial.println(Cicle.Pause);
+#endif
 }
 
 /*** Обработчик кнопки энкодера ***/
@@ -745,27 +734,27 @@ void setALC(int setAlc) {
 }
 
 void setAlcFreq(long freq) { // Установка по измеренному уровню сигнала
-   int alc;
-   if(freq >= 50000)alc = 0;
-    if(freq >= 100000)alc = 14;
-    if(freq >= 150000)alc = 27;
-    if(freq >= 200000)alc = 40;
-    if(freq >= 250000)alc = 53;
-    if(freq >= 300000)alc = 66;
-    if(freq >= 350000)alc = 80;
-    if(freq >= 400000)alc = 93;
-    if(freq >= 450000)alc = 106;
-    if(freq >= 500000)alc = 120;
-    if(freq >= 550000)alc = 133;
-    if(freq >= 600000)alc = 146;
-    if(freq >= 650000)alc = 160;
-    if(freq >= 700000)alc = 173;
-    if(freq >= 750000)alc = 186;
-    if(freq >= 800000)alc = 200;
-    if(freq >= 850000)alc = 213;
-    if(freq >= 900000)alc = 226;
-    if(freq >= 950000)alc = 240;
-    if(freq >= 1000000)alc = 254;
+  int alc;
+  if (freq >= 50000)alc = 0;
+  if (freq >= 100000)alc = 14;
+  if (freq >= 150000)alc = 27;
+  if (freq >= 200000)alc = 40;
+  if (freq >= 250000)alc = 53;
+  if (freq >= 300000)alc = 66;
+  if (freq >= 350000)alc = 80;
+  if (freq >= 400000)alc = 93;
+  if (freq >= 450000)alc = 106;
+  if (freq >= 500000)alc = 120;
+  if (freq >= 550000)alc = 133;
+  if (freq >= 600000)alc = 146;
+  if (freq >= 650000)alc = 160;
+  if (freq >= 700000)alc = 173;
+  if (freq >= 750000)alc = 186;
+  if (freq >= 800000)alc = 200;
+  if (freq >= 850000)alc = 213;
+  if (freq >= 900000)alc = 226;
+  if (freq >= 950000)alc = 240;
+  if (freq >= 1000000)alc = 254;
   Alc.writeValue(alc);
   delay(10);
 }
@@ -1092,16 +1081,16 @@ void setup() {
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
 #ifdef DEBUG
- // testMCP41010();
+  // testMCP41010();
 #endif
   wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
-  
+
 #ifdef DEBUG
   testTFT(10000);
 #endif
-  
+
   // Читаем базу
   readSQLite3();
 
@@ -1117,10 +1106,10 @@ void loop() {
     Serial.println("Режим ZEPPER");
 #ifdef LCD_RUS
     goZepper();
-   // setZepper();
+    // setZepper();
 #else
     goZepper();
-  //  setZepper1();
+    //  setZepper1();
 #endif
   }
 
@@ -1398,15 +1387,15 @@ void readDamp(int pw) {
     Serial.print("Мощность выхода = ");
     Serial.println(currentEncoderPos + pw);
   }
-    Serial.println();
+  Serial.println();
 #endif
 }
 
- 
+
 /*
   G0 - TFT CS
   G1 - TX
-  G2 - 
+  G2 -
   G3 - RX
   g4 -
   G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
@@ -1444,7 +1433,7 @@ void readDamp(int pw) {
 
   G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
 
- //  Пины модуля 1 - 38
+  //  Пины модуля 1 - 38
   3 - ENC_SW
   4 - SENS_IMPLOSION
   5 - ENC_DT
