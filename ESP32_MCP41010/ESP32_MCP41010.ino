@@ -184,6 +184,7 @@ int currentPotenciometrPercent = 127;
 AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 
 /******* Простой энкодер *******/
+/*
 #define ROTARY_ENCODER_STEPS 4
 AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
 
@@ -191,7 +192,7 @@ void IRAM_ATTR readEncoderISR()
 {
     rotaryEncoder.readEncoder_ISR();
 }
-
+*/
 
 void rotary_onButtonClick() {  // простой пример нажатия кнопки энкодера, не используется
   Serial.print("maxTimers = ");
@@ -1011,25 +1012,6 @@ void testMCP41010() {
 
 //************************** SETUP *************************/
 void setup() {
-  Serial.begin(115200);
-  Serial.println("START");
-
-  // lcd.begin();  // Зависит от версии библиотеки
-  lcd.init();     //
-
-  lcd.backlight();
-  delay(100);
-
-  // сбрасываем потенциометр в 0%
-  resetPotenciometer();
-  // после сброса устанавливаем значение по умолчанию
-  setResistance(currentPotenciometrPercent);
-
-  // ждем секунду после настройки потенциометра
-  delay(100);
-
-  Btn1.init();
-
   pinMode(ON_OFF_CASCADE_PIN, OUTPUT);
   pinMode(PIN_ZUM, OUTPUT);
   pinMode(PIN_RELE, OUTPUT);
@@ -1041,6 +1023,17 @@ void setup() {
   pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLUP);
   pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT_PULLUP);
   
+  Serial.begin(115200);
+  Serial.println("START");
+
+  // lcd.begin();  // Зависит от версии библиотеки
+  lcd.init();     //
+  lcd.backlight();
+  delay(100);
+
+  Btn1.init();
+
+ 
   // Энкодер
   /*
   rotaryEncoder.areEncoderPinsPulldownforEsp32=false;
@@ -1058,6 +1051,15 @@ void setup() {
   //SPI.begin();    // Для библиотеки MCP4xxxx обязательно было, теперь нельзя!!!
   Potentiometer.begin();
   Alc.begin();
+  
+  // сбрасываем потенциометр в 0%
+  resetPotenciometer();
+  // после сброса устанавливаем значение по умолчанию
+  setResistance(currentPotenciometrPercent);
+
+  // ждем секунду после настройки потенциометра
+  delay(100);
+
 
   // This MUST be the first command after declaring the AD9833 object
   Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
