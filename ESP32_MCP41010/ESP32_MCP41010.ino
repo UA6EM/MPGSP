@@ -62,6 +62,10 @@
 //#define ROTARY_ENCODER_STEPS 4
 #define  MCP41010MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
+#define PULSE_INPUT_PIN 16 // Rotaty Encoder A  // orig16
+#define PULSE_CTRL_PIN 17  // Rotaty Encoder B  // orig17
+#include "driver/pcnt.h"
+
 #include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
 //#include "config.h"
@@ -144,6 +148,8 @@ volatile  int d_resis = 255;
 volatile int alc_resis;                // Установка значения регулировки ALC (MCP41010)
 bool SbLong = false;
 
+int16_t RE_Count = 0;
+
 #ifndef LCD_RUS
 #define I2C_ADDR 0x3F //0x27
 #include <LiquidCrystal_I2C.h>
@@ -203,7 +209,7 @@ void rotary_onButtonClick() {  // простой пример нажатия к�
 
 void rotary_loop() {
   //dont print anything unless value changed
-  if (rotaryEncoder.encoderChanged()) {
+ if (rotaryEncoder.encoderChanged()) {
     Serial.print("Value: ");
     Serial.println(rotaryEncoder.readEncoder());
   }
@@ -455,6 +461,25 @@ void printStruct() {
 #endif
 }
 // ******************* КОНЕЦ БЛОКА ФУНКЦИЙ ПО РАБОТЕ С БАЗОЙ  ******************//
+
+/*-----------------------------------------------------------------------------------------------
+        Alternative Loop (core0)
+------------------------------------------------------------------------------------------------*/
+void task0(void* arg)
+{
+     while (1)
+     {    
+         pcnt_get_counter_value(PCNT_UNIT_0, &RE_Count);          
+         static int count; //=RE_Count;
+         if(count!= RE_Count/4){
+          count = RE_Count/4;
+          Serial.println(count);    
+         }
+         //pcnt_counter_clear(PCNT_UNIT_0);
+         //Serial.println(count);                 
+         delay(1);
+     }
+}
 
 
 /*** Обработчик кнопки энкодера ***/
@@ -1014,7 +1039,18 @@ void setup() {
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
   pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLUP);
   pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLUP);
-
+  pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT_PULLUP);
+  
+  // Энкодер
+  /*
+  rotaryEncoder.areEncoderPinsPulldownforEsp32=false;
+  rotaryEncoder.begin();
+  rotaryEncoder.setup(readEncoderISR);
+  rotaryEncoder.setBoundaries(-300, 300, false); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
+  //rotaryEncoder.setAcceleration(250);
+  my_encoder.attach(encPeriod, rotary_loop);     // будет вызываться функция обработки энкодера
+*/
+  
   ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
@@ -1056,6 +1092,43 @@ void setup() {
 
   // Читаем базу
   readSQLite3();
+
+   //--------- create tasks on core0 --------------------------------
+    xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
+
+
+        //--- Counter setup for Rotary Encoder ---------------------
+    pcnt_config_t pcnt_config_A;// structure for A   
+    pcnt_config_t pcnt_config_B;// structure for B
+    //
+    pcnt_config_A.pulse_gpio_num = PULSE_INPUT_PIN;
+    pcnt_config_A.ctrl_gpio_num = PULSE_CTRL_PIN;
+    pcnt_config_A.lctrl_mode = PCNT_MODE_REVERSE;
+    pcnt_config_A.hctrl_mode = PCNT_MODE_KEEP;
+    pcnt_config_A.channel = PCNT_CHANNEL_0;
+    pcnt_config_A.unit = PCNT_UNIT_0;
+    pcnt_config_A.pos_mode = PCNT_COUNT_INC;
+    pcnt_config_A.neg_mode = PCNT_COUNT_DEC;
+    pcnt_config_A.counter_h_lim = 10000;
+    pcnt_config_A.counter_l_lim = -10000;
+    //
+    pcnt_config_B.pulse_gpio_num = PULSE_CTRL_PIN;
+    pcnt_config_B.ctrl_gpio_num = PULSE_INPUT_PIN;
+    pcnt_config_B.lctrl_mode = PCNT_MODE_KEEP;
+    pcnt_config_B.hctrl_mode = PCNT_MODE_REVERSE;
+    pcnt_config_B.channel = PCNT_CHANNEL_1;
+    pcnt_config_B.unit = PCNT_UNIT_0;
+    pcnt_config_B.pos_mode = PCNT_COUNT_INC;
+    pcnt_config_B.neg_mode = PCNT_COUNT_DEC;
+    pcnt_config_B.counter_h_lim = 10000;
+    pcnt_config_B.counter_l_lim = -10000;
+    //
+    pcnt_unit_config(&pcnt_config_A);//Initialize A
+    pcnt_unit_config(&pcnt_config_B);//Initialize B
+    pcnt_counter_pause(PCNT_UNIT_0);
+    pcnt_counter_clear(PCNT_UNIT_0);
+    pcnt_counter_resume(PCNT_UNIT_0); //Start
+
 }  //******** END SETUP ********//
 
 
