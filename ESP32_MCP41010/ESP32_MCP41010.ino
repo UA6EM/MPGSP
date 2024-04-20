@@ -50,7 +50,7 @@
 #define CORRECT_PIN A3         // Пин для внешней корректировки частоты.
 
 //ROTARY ENCODER
-#define ROTARY_ENCODER_A_PIN 34
+#define ROTARY_ENCODER_A_PIN 33
 #define ROTARY_ENCODER_B_PIN 35
 #define ROTARY_ENCODER_BUTTON_PIN 36
 #define PIN_ENC_BUTTON 25  // отдельная кнопка, для пробы
@@ -178,8 +178,14 @@ int currentPotenciometrPercent = 127;
 AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 
 /******* Простой энкодер *******/
-//instead of changing here, rather change numbers above
-AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
+#define ROTARY_ENCODER_STEPS 4
+AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
+
+void IRAM_ATTR readEncoderISR()
+{
+    rotaryEncoder.readEncoder_ISR();
+}
+
 
 void rotary_onButtonClick() {  // простой пример нажатия кнопки энкодера, не используется
   Serial.print("maxTimers = ");
@@ -206,15 +212,12 @@ void rotary_loop() {
   }
 }
 
-void IRAM_ATTR readEncoderISR() {
-  rotaryEncoder.readEncoder_ISR();
-}
 
-
-// TFT ILI-9341
+// Дисплей TFT ILI-9341
 #define TFT_GREY 0x5AEB
-#include <TFT_eSPI.h> // Hardware-specific library
+#include <TFT_eSPI.h>            // Hardware-specific library
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
+
 
 
 //    *** Используемые подпрограммы выносим сюда ***   //
@@ -1074,6 +1077,7 @@ void loop() {
 
   if (Btn1.read() == sbLong && !isWorkStarted) {
     SbLong = true;
+    Serial.println("Режим STATIC");
   }
 
   if (mill - prevUpdateDataIna > 1000 * 2) {
@@ -1099,9 +1103,6 @@ void loop() {
     memTimers = setTimerLCD(memTimers);
   }
 
-  //  ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-  //    newEncoderPos = encoder.getPosition();
-  //  }
 
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
