@@ -62,8 +62,8 @@
 //#define ROTARY_ENCODER_STEPS 4
 #define  MCP41010MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
 
-#define PULSE_INPUT_PIN 16 // Rotaty Encoder A  // orig16
-#define PULSE_CTRL_PIN 17  // Rotaty Encoder B  // orig17
+#define PULSE_INPUT_PIN 26 // Rotaty Encoder A  // orig16
+#define PULSE_CTRL_PIN 27  // Rotaty Encoder B  // orig17
 #include "driver/pcnt.h"
 
 #include "AiEsp32RotaryEncoder.h"
@@ -86,6 +86,8 @@
 #include <FS.h>
 #include "SPIFFS.h"
 #include "LittleFS.h"
+#include "SD_MMC.h"
+#include "SD.h"
 
 #include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
@@ -104,14 +106,20 @@ float encPeriod = 0.05;
 #define AD9833_SCK 14
 #define AD9833_CS 15
 
+//SD, SD_MMC
+#define SD_MISO 12
+#define SD_MOSI 13
+#define SD_SCK 14
+#define SD_CS 16
+
 //LCD1602_I2C OR LCD2004_I2C AND INA219
 #define I2C_SDA     21    // LCD1602 SDA
 #define I2C_SCK     22    // LCD1602 SCK
 
 //MCP41010
-#define  MCP41x1_SCK   18 // Define SCK pin for MCP4131 or MCP41010
-#define  MCP41x1_MOSI  23 // Define MOSI pin for MCP4131 or MCP41010
-#define  MCP41x1_MISO  19 // Define MISO pin for MCP4131 or MCP41010
+#define  MCP41x1_SCK   14 // Define SCK pin for MCP4131 or MCP41010
+#define  MCP41x1_MOSI  13 // Define MOSI pin for MCP4131 or MCP41010
+#define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP41010
 #define  MCP41x1_CS    5  // Define chipselect pin for MCP41010 (CS for Volume)
 #define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
 
@@ -192,7 +200,7 @@ void IRAM_ATTR readEncoderISR()
 {
     rotaryEncoder.readEncoder_ISR();
 }
-*/
+*
 
 void rotary_onButtonClick() {  // простой пример нажатия кнопки энкодера, не используется
   Serial.print("maxTimers = ");
@@ -218,6 +226,7 @@ void rotary_loop() {
     rotary_onButtonClick();
   }
 }
+*/
 
 
 // Дисплей TFT ILI-9341
@@ -1084,6 +1093,7 @@ void setup() {
 #ifdef DEBUG
   // testMCP41010();
 #endif
+
   wiperValue = d_resis / 2;
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
