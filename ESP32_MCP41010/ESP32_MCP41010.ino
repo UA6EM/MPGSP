@@ -38,32 +38,27 @@
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
-#define DEBUG                          // Замаркировать если не нужны тесты
+//#define DEBUG                          // Замаркировать если не нужны тесты
 #define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
 #define DAYS(x) (HOURS(x) * 24UL)
 #define WEEKS(x) (DAYS(x) * 7UL)
+
 #define ON_OFF_CASCADE_PIN 32  // Для выключения выходного каскада
 #define PIN_ZUM 33
 #define CORRECT_PIN A3         // Пин для внешней корректировки частоты.
 
 //ROTARY ENCODER
-#define ROTARY_ENCODER_A_PIN 33
-#define ROTARY_ENCODER_B_PIN 35
-#define ROTARY_ENCODER_BUTTON_PIN 36
-#define PIN_ENC_BUTTON 25  // отдельная кнопка, для пробы
+#define ROTARY_ENCODER_A_PIN 26 // Rotaty Encoder A  // orig16
+#define ROTARY_ENCODER_B_PIN 27 // Rotaty Encoder B  // orig17
+#define ROTARY_ENCODER_BUTTON_PIN 35
+#define PIN_ENC_BUTTON 35       // отдельная кнопка, для пробы
 
-#define ROTARY_ENCODER_VCC_PIN -1 /* 27 put -1 of Rotary encoder Vcc is connected directly to 3,3V; else you can use declared output pin for powering rotary encoder */
-//depending on your encoder - try 1,2 or 4 to get expected behaviour
-#define ROTARY_ENCODER_STEPS 1
-//#define ROTARY_ENCODER_STEPS 2
-//#define ROTARY_ENCODER_STEPS 4
-#define  MCP41010MOD       // используем библиотеку c с разрешением 255 единиц (аналог MCP4151)
+#define  MCP41010MOD       // используем библиотеку с разрешением 255 единиц (аналог MCP4151)
 
-#define PULSE_INPUT_PIN 26 // Rotaty Encoder A  // orig16
-#define PULSE_CTRL_PIN 27  // Rotaty Encoder B  // orig17
+
 #include "driver/pcnt.h"
 
 #include "AiEsp32RotaryEncoder.h"
@@ -89,7 +84,7 @@
 #include "SD_MMC.h"
 #include "SD.h"
 
-#include "AiEsp32RotaryEncoder.h"
+//#include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
 #include "config.h"
 
@@ -98,28 +93,29 @@ Ticker my_encoder;
 float encPeriod = 0.05;
 #endif
 
-#define PIN_RELE 26
-
-//AD9833
-//#define AD9833_MISO 12
-#define AD9833_MOSI 13
-#define AD9833_SCK 14
-#define AD9833_CS 15
-
-//SD, SD_MMC
-#define SD_MISO 12
-#define SD_MOSI 13
-#define SD_SCK 14
-#define SD_CS 16
+#define PIN_RELE 25
 
 //LCD1602_I2C OR LCD2004_I2C AND INA219
 #define I2C_SDA     21    // LCD1602 SDA
 #define I2C_SCK     22    // LCD1602 SCK
 
+//AD9833
+//#define AD9833_MISO 19
+#define AD9833_MOSI 23
+#define AD9833_SCK 18
+#define AD9833_CS 15
+
+//SD, SD_MMC
+#define SD_MISO 19
+#define SD_MOSI 23
+#define SD_SCK  18
+uint8_t SD_CS = 16;
+
 //MCP41010
 #define  MCP41x1_SCK   14 // Define SCK pin for MCP4131 or MCP41010
 #define  MCP41x1_MOSI  13 // Define MOSI pin for MCP4131 or MCP41010
 #define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP41010
+
 #define  MCP41x1_CS    5  // Define chipselect pin for MCP41010 (CS for Volume)
 #define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
 
@@ -192,41 +188,6 @@ int currentPotenciometrPercent = 127;
 AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 
 /******* Простой энкодер *******/
-/*
-#define ROTARY_ENCODER_STEPS 4
-AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
-
-void IRAM_ATTR readEncoderISR()
-{
-    rotaryEncoder.readEncoder_ISR();
-}
-*
-
-void rotary_onButtonClick() {  // простой пример нажатия кнопки энкодера, не используется
-  Serial.print("maxTimers = ");
-  Serial.println(maxTimers);
-  static unsigned long lastTimePressed = 0;
-  //ignore multiple press in that time milliseconds
-  if (millis() - lastTimePressed < 500) {
-    return;
-  }
-  lastTimePressed = millis();
-  Serial.print("button pressed ");
-  Serial.print(millis());
-  Serial.println(" milliseconds after restart");
-}
-
-void rotary_loop() {
-  //dont print anything unless value changed
- if (rotaryEncoder.encoderChanged()) {
-    Serial.print("Value: ");
-    Serial.println(rotaryEncoder.readEncoder());
-  }
-  if (rotaryEncoder.isEncoderButtonClicked()) {
-    rotary_onButtonClick();
-  }
-}
-*/
 
 
 // Дисплей TFT ILI-9341
@@ -404,9 +365,18 @@ String queryPause = "SELECT * FROM pauses WHERE id = ";
 String queryGen = "SELECT * FROM modesgen WHERE id = ";
 String querySig = "SELECT * FROM modessig WHERE id = ";
 
+#ifdef SD_CARD
+const char* DBName = "/sd/standard.db";
+#else
+#ifdef SD_CARD_MMC
+const char* DBName = "/sdcard/standard.db";
+#else
+const char* DBName = "/spiffs/standard.db";
 //const char* DBName = "/spiffs/zepper.db";
 //const char* DBName = "/spiffs/std.db";
-const char* DBName = "/spiffs/standard.db";
+#endif
+#endif
+
 
 struct  {
   int ModeGen;   // 0 - GENERATOR 1 - ZEPPER
@@ -850,9 +820,150 @@ void myDisplay() {
   lcd.print("ma");
 }
 
+int readSqlDB(){
+#ifdef SD_CARD_MMC
+   SPI.begin();
+   SD_MMC.begin();
+#else
+#ifdef SD_CARD
+   SPI.begin();
+   SD.begin(SD_CS);
+#else
+  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
+    Serial.println("Failed to mount file system");
+    return 0;
+  }
+#endif
+#endif
+
+  sqlite3* db;
+  sqlite3_initialize();
+  int rc = sqlite3_open(DBName /*"/spiffs/zepper.db"*/, &db);
+    if (rc) {
+    printf("Can't open database: %s\n", sqlite3_errmsg(db));
+    sqlite3_close(db);
+    return (1);
+  }
+
+  // Принимающий массив передаётся чертвёртым параметром!
+  // Формируем строки запросов к таблицам базы данных
+  itoa(numerInTable, buffers, 10);
+  queryFreq  += String(buffers);
+  queryExpo  += String(buffers);
+  queryPause += String(buffers);
+  queryGen   += String(buffers);
+  querySig   += String(buffers);
+
+  Serial.println();
+  Serial.print("миллис начала = ");
+  unsigned long gomill = millis();
+  Serial.println(gomill);
+  Serial.println();
+
+  //заполним массив частот
+  rc = sqlite3_exec(db, queryFreq.c_str(), callback, zepDbFreq, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+    // ПЕЧАТЬ массива для проверки
+#ifdef DEBUG    
+    for (int i = 0; i < sizeof(zepDbFreq) / sizeof(zepDbFreq[0]); i++) {
+      printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
+    }
+#endif    
+  }
+  Serial.print(queryFreq);
+  Serial.println("  - Обработан");
+
+  //заполним массив экспозиций
+  rc = sqlite3_exec(db, queryExpo.c_str(), callback, zepDbExpo, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+#ifdef DEBUG     
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbExpo) / sizeof(zepDbExpo[0]); i++) {
+      printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
+    }
+#endif    
+  }
+  Serial.print(queryExpo);
+  Serial.println("  - Обработан");
+
+  //заполним массив пауз
+  rc = sqlite3_exec(db, queryPause.c_str(), callback, zepDbPause, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+#ifdef DEBUG     
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbPause) / sizeof(zepDbPause[0]); i++) {
+      printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
+    }
+#endif    
+  }
+  Serial.print(queryPause);
+  Serial.println("  - Обработан");
+
+  //заполним массив режимов генератора
+  rc = sqlite3_exec(db, queryGen.c_str(), callback, zepDbModeGen, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+#ifdef DEBUG     
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbModeGen) / sizeof(zepDbModeGen[0]); i++) {
+      printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
+    }
+#endif    
+  }
+  Serial.print(queryGen);
+  Serial.println("  - Обработан");
+
+  //заполним массив режимов вида сигнала генератора
+  rc = sqlite3_exec(db, querySig.c_str(), callback, zepDbModeSig, &zErrMsg);
+  if (rc != SQLITE_OK) {
+    fprintf(stderr, "SQL error: %s\n", zErrMsg);
+    sqlite3_free(zErrMsg);
+  }
+  else {
+#ifdef DEBUG     
+    // ПЕЧАТЬ массива для проверки
+    for (int i = 0; i < sizeof(zepDbModeSig) / sizeof(zepDbModeSig[0]); i++) {
+      printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
+    }
+#endif    
+  }
+  Serial.print(querySig);
+  Serial.println("  - Обработан");
+
+  Serial.println();
+  Serial.print("миллис окончания = ");
+  Serial.println(millis());
+  Serial.print("Время обработки базы = ");
+  Serial.print((float)(millis() - gomill) / 1000, 3);
+  Serial.println(" сек");
+  Serial.println();
+
+  sqlite3_close(db);
+  setStructure(0);
+  printStruct();
+
+  return 0;
+}
+
 
 int readSQLite3() {
   printf("Go on!!!\n\n");
+  
 
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("Failed to mount file system");
@@ -1042,17 +1153,6 @@ void setup() {
 
   Btn1.init();
 
- 
-  // Энкодер
-  /*
-  rotaryEncoder.areEncoderPinsPulldownforEsp32=false;
-  rotaryEncoder.begin();
-  rotaryEncoder.setup(readEncoderISR);
-  rotaryEncoder.setBoundaries(-300, 300, false); //minValue, maxValue, circleValues true|false (when max go to min and vice versa)
-  //rotaryEncoder.setAcceleration(250);
-  my_encoder.attach(encPeriod, rotary_loop);     // будет вызываться функция обработки энкодера
-*/
-  
   ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
   ina219.calibrate(0.100, 0.32, 16, 3.2);
@@ -1103,8 +1203,11 @@ void setup() {
 #endif
 
   // Читаем базу
-  readSQLite3();
+  // readSQLite3();
+  readSqlDB();      // Чтение базы в массивы с трёх возможных накопителей
 
+
+  // Энкодер
    //--------- create tasks on core0 --------------------------------
     xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
 
@@ -1113,8 +1216,8 @@ void setup() {
     pcnt_config_t pcnt_config_A;// structure for A   
     pcnt_config_t pcnt_config_B;// structure for B
     //
-    pcnt_config_A.pulse_gpio_num = PULSE_INPUT_PIN;
-    pcnt_config_A.ctrl_gpio_num = PULSE_CTRL_PIN;
+    pcnt_config_A.pulse_gpio_num = ROTARY_ENCODER_A_PIN;
+    pcnt_config_A.ctrl_gpio_num = ROTARY_ENCODER_B_PIN;
     pcnt_config_A.lctrl_mode = PCNT_MODE_REVERSE;
     pcnt_config_A.hctrl_mode = PCNT_MODE_KEEP;
     pcnt_config_A.channel = PCNT_CHANNEL_0;
@@ -1124,8 +1227,8 @@ void setup() {
     pcnt_config_A.counter_h_lim = 10000;
     pcnt_config_A.counter_l_lim = -10000;
     //
-    pcnt_config_B.pulse_gpio_num = PULSE_CTRL_PIN;
-    pcnt_config_B.ctrl_gpio_num = PULSE_INPUT_PIN;
+    pcnt_config_B.pulse_gpio_num = ROTARY_ENCODER_B_PIN;
+    pcnt_config_B.ctrl_gpio_num = ROTARY_ENCODER_A_PIN;
     pcnt_config_B.lctrl_mode = PCNT_MODE_KEEP;
     pcnt_config_B.hctrl_mode = PCNT_MODE_REVERSE;
     pcnt_config_B.channel = PCNT_CHANNEL_1;
@@ -1347,3 +1450,46 @@ void readDamp(int pw) {
   }
 #endif
 }
+
+
+
+//  G0 - TFT CS
+//  G1 - TX
+//  G2 - <-> TFT_CS
+//  G3 - RX
+//  g4 - <-> TFT_DC
+//  G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
+//  G6 -
+//  G7 -
+//  G8 -
+//  G9 -
+//  G10 -
+//  G11 -
+//  G12 - AD9833_MISO 12  X  NOT CONNECTED
+//  G13 - AD9833_MOSI 13 <-> AD9833_SDATA  <-> TFT_MOSI
+//  G14 - AD9833_SCK  14 <-> AD9833_SCLK   <-> TFT_SCK
+//  G15 - AD9833_CS   15 <-> AD9833_FSYNC
+//  G16 - - - - - - - - - - - - - - - - -  <-> TFT_RST
+  
+//  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
+//  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
+//  G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010
+//  G20 -
+//  G21 - SDA // LCD, INA219
+//  G22 - SCK // LCD, INA219
+//  G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
+//  G24 -
+//  G25 - ROTARY_ENCODER_BUTTON_PIN 25 <-> ENC_SW
+//  G26 - ROTARY_ENCODER_A_PIN      26 <-> ENC_CLK   //PIN_RELE    26 <-> RELAY
+//  G27 - ROTARY_ENCODER_B_PIN      27 <-> ENC_DT
+//  G28 -
+//  G29 -
+//  G30 -
+//  G31 -
+//  G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
+//  G33 - PIN_ZUM                   33 <-> BUZZER
+//  G34 - 
+//  G35 - 
+//  G36 - 
+
+//  G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION

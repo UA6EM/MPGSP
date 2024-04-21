@@ -16,6 +16,7 @@
   G14 - AD9833_SCK  14 <-> AD9833_SCLK   <-> TFT_SCK
   G15 - AD9833_CS   15 <-> AD9833_FSYNC
   G16 - - - - - - - - - - - - - - - - -  <-> TFT_RST
+  
   G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
   G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
   G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010
@@ -59,3 +60,45 @@
   34 - RELAY
   35 - AD9833_FSYNC
 */
+
+/*
+#define ROTARY_ENCODER_STEPS 4
+AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, -1, ROTARY_ENCODER_STEPS);
+
+void IRAM_ATTR readEncoderISR()
+{
+    rotaryEncoder.readEncoder_ISR();
+}
+*
+
+void rotary_onButtonClick() {  // простой пример нажатия кнопки энкодера, не используется
+  Serial.print("maxTimers = ");
+  Serial.println(maxTimers);
+  static unsigned long lastTimePressed = 0;
+  //ignore multiple press in that time milliseconds
+  if (millis() - lastTimePressed < 500) {
+    return;
+  }
+  lastTimePressed = millis();
+  Serial.print("button pressed ");
+  Serial.print(millis());
+  Serial.println(" milliseconds after restart");
+}
+
+void rotary_loop() {
+  //dont print anything unless value changed
+ if (rotaryEncoder.encoderChanged()) {
+    Serial.print("Value: ");
+    Serial.println(rotaryEncoder.readEncoder());
+  }
+  if (rotaryEncoder.isEncoderButtonClicked()) {
+    rotary_onButtonClick();
+  }
+}
+*/
+
+#define ROTARY_ENCODER_VCC_PIN -1 /* 27 put -1 of Rotary encoder Vcc is connected directly to 3,3V; else you can use declared output pin for powering rotary encoder */
+//depending on your encoder - try 1,2 or 4 to get expected behaviour
+#define ROTARY_ENCODER_STEPS 1
+//#define ROTARY_ENCODER_STEPS 2
+//#define ROTARY_ENCODER_STEPS 4
