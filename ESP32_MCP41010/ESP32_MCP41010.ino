@@ -38,7 +38,7 @@
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
-//#define DEBUG                          // Замаркировать если не нужны тесты
+#define DEBUG                          // Замаркировать если не нужны тесты
 #define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -58,14 +58,6 @@
 
 #define  MCP41010MOD       // используем библиотеку с разрешением 255 единиц (аналог MCP4151)
 
-
-#include "driver/pcnt.h"
-
-#include "AiEsp32RotaryEncoder.h"
-#include "Arduino.h"
-//#include "config.h"
-
-
 #if (defined(ESP32))
 #ifdef WIFI
 #include <WiFi.h>
@@ -83,10 +75,13 @@
 #include "LittleFS.h"
 #include "SD_MMC.h"
 #include "SD.h"
-
+#include "config.h"
+#include "driver/pcnt.h"
 //#include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
-#include "config.h"
+
+//#define SD_CARD
+//#define SD_CARD_MMC
 
 #include <Ticker.h>
 Ticker my_encoder;
@@ -826,7 +821,7 @@ int readSqlDB(){
    SD_MMC.begin();
 #else
 #ifdef SD_CARD
-   SPI.begin();
+   //SPI.begin();
    SD.begin(SD_CS);
 #else
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
