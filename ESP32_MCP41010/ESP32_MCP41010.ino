@@ -55,8 +55,7 @@
 #define ROTARY_ENCODER_B_PIN 27 // Rotaty Encoder B  // orig17
 #define ROTARY_ENCODER_BUTTON_PIN 35
 #define PIN_ENC_BUTTON 35       // отдельная кнопка, для пробы
-
-#define  MCP41010MOD       // используем библиотеку с разрешением 255 единиц (аналог MCP4151)
+#define  MCP41010MOD            // библиотека с разрешением 255 единиц (аналог MCP4151)
 
 #if (defined(ESP32))
 #ifdef WIFI
@@ -100,18 +99,18 @@ float encPeriod = 0.05;
 #define AD9833_SCK 18
 #define AD9833_CS 15
 
-//SD, SD_MMC
+//SD!!! ONLY
 #define SD_MISO 19
 #define SD_MOSI 23
 #define SD_SCK  18
-uint8_t SD_CS = 16;
+uint8_t SD_CS = 5;
 
 //MCP41010
-#define  MCP41x1_SCK   14 // Define SCK pin for MCP4131 or MCP41010
-#define  MCP41x1_MOSI  13 // Define MOSI pin for MCP4131 or MCP41010
-#define  MCP41x1_MISO  12 // Define MISO pin for MCP4131 or MCP41010
+#define  MCP41x1_SCK   18 //14 // Define SCK pin for MCP4131 or MCP41010
+#define  MCP41x1_MOSI  23 //13 // Define MOSI pin for MCP4131 or MCP41010
+#define  MCP41x1_MISO  19 //12 // Define MISO pin for MCP4131 or MCP41010
 
-#define  MCP41x1_CS    5  // Define chipselect pin for MCP41010 (CS for Volume)
+#define  MCP41x1_CS    16  // Define chipselect pin for MCP41010 (CS for Volume)
 #define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
 
 #define zFreq 2           // Делитель интервала - секунда/2
@@ -191,8 +190,13 @@ AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
 TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
 
-
 //    *** Используемые подпрограммы выносим сюда ***   //
+/*--------------------------------------------------------------------------
+        Timer ISR
+---------------------------------------------------------------------------*/
+hw_timer_t * timer = NULL;
+void IRAM_ATTR onTimer(){}
+
 
 // переменные для часиков
 float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0;    // Saved H, M, S x & y multipliers
@@ -821,8 +825,10 @@ int readSqlDB(){
    SD_MMC.begin();
 #else
 #ifdef SD_CARD
-   //SPI.begin();
+   SPI.begin(-1,-1,-1,SD_CS);
    SD.begin(SD_CS);
+   //SPI.begin();
+   //SD.begin();
 #else
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("Failed to mount file system");
@@ -1206,7 +1212,12 @@ void setup() {
    //--------- create tasks on core0 --------------------------------
     xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
 
-
+    //--------- Set up Interrupt Timer -------------------------------
+    timer = timerBegin(0, 80, true); //use Timer0, div80 for 1us clock
+    timerAttachInterrupt(timer, &onTimer, true);
+    timerAlarmWrite(timer, 10000, true); // T=10000us
+    timerAlarmEnable(timer); // Start Timer
+    
         //--- Counter setup for Rotary Encoder ---------------------
     pcnt_config_t pcnt_config_A;// structure for A   
     pcnt_config_t pcnt_config_B;// structure for B
