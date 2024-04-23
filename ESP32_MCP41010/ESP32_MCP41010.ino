@@ -94,21 +94,21 @@ float encPeriod = 0.05;
 #define I2C_SCK     22    // LCD1602 SCK
 
 //AD9833
-//#define AD9833_MISO 19
-#define AD9833_MOSI 23
-#define AD9833_SCK 18
-#define AD9833_CS 15
+#define AD9833_MISO 12 //19
+#define AD9833_MOSI 13 //23
+#define AD9833_SCK  14 //18
+#define AD9833_CS   15
 
 //SD!!! ONLY
 #define SD_MISO 19
 #define SD_MOSI 23
 #define SD_SCK  18
-uint8_t SD_CS = 5;
+#define SD_CS    5
 
 //MCP41010
-#define  MCP41x1_SCK   18 //14 // Define SCK pin for MCP4131 or MCP41010
-#define  MCP41x1_MOSI  23 //13 // Define MOSI pin for MCP4131 or MCP41010
-#define  MCP41x1_MISO  19 //12 // Define MISO pin for MCP4131 or MCP41010
+#define  MCP41x1_SCK   18 //18 //14 // Define SCK pin for MCP4131 or MCP41010
+#define  MCP41x1_MOSI  23 //23 //13 // Define MOSI pin for MCP4131 or MCP41010
+#define  MCP41x1_MISO  19 //19 //12 // Define MISO pin for MCP4131 or MCP41010
 
 #define  MCP41x1_CS    16  // Define chipselect pin for MCP41010 (CS for Volume)
 #define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
@@ -825,7 +825,7 @@ int readSqlDB(){
    SD_MMC.begin();
 #else
 #ifdef SD_CARD
-   SPI.begin(-1,-1,-1,SD_CS);
+   //SPI.begin(-1,-1,-1,SD_CS);
    SD.begin(SD_CS);
    //SPI.begin();
    //SD.begin();
