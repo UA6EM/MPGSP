@@ -739,83 +739,14 @@ void readAnalogAndSetFreqInLoop() {
   setALC( alc_resis);        // выставить усиление
 }
 
+
 // *** Вывод на дисплей ***
-void myDisplay() {
-  // 1 строка
-  //lcd.setCursor(0, 0);
-  if (!isWorkStarted) {
-#ifdef LCD_RUS
-    Serial.println("Время-");
-#else
-    Serial.println("Times-");
-#endif
-    Serial.println(memTimers / 60000);
-    if (memTimers / 60000 > 0) {
-#ifdef LCD_RUS
-      Serial.println(" мин. ");
-#else
-      Serial.println(" min. ");
-#endif
-    } else {
-#ifdef LCD_RUS
-      Serial.println("0 мин. ");
-#else
-      Serial.println("0 min. ");
-#endif
-    }
-  } else {
-    Serial.println("T-");
-    if (memTimers > 60000) {
-      // если больше минуты, то показываем минуты
-      Serial.println(memTimers / 1000 / 60);
-#ifdef LCD_RUS
-      Serial.println("мин.");
-#else
-      Serial.println("min.");
-#endif
-    } else {
-      // если меньше минуты, то показываем секунды
-      Serial.println(memTimers / 1000);
-#ifdef LCD_RUS
-      Serial.println("сек.");
-#else
-      Serial.println("sek.");
-#endif
-    }
-    Serial.println(" U=");
-#ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
-    Serial.println(map(currentPotenciometrPercent, 1, 255, 1, 100));
-#else
-    Serial.println(map(currentPotenciometrPercent, 1, 127, 1, 100));
-#endif
-    Serial.println("%  ");
-  }
-
-  // 2 строка
-  // lcd.setCursor(0, 1);
-  Serial.println("F=");
-  //lcd.setCursor(3, 1);                   //1 строка 7 позиция
-  float freq_tic = ifreq;
-  float kHz = freq_tic / 1000;
-  Serial.println(kHz, 0);
-  Serial.println("kHz");
-
-  // 2 строка
-  //lcd.setCursor(9, 1);
-  Serial.println("I=");
-  //lcd.setCursor(11, 1);
-  Serial.println(Data_ina219 * 2);
-  Serial.println("ma");
-}
-
-
 String s = "";
+String s1 = "";
 
 void tftDisplay() {
-  // 1 строка
-  //lcd.setCursor(0, 0);
-  if (!isWorkStarted) {
-   // String s = "";
+  // 1-я строка
+  if (isWorkStarted) {
 #ifdef LCD_RUS
     s += "Время-"; //Serial.println("Время-");
 #else
@@ -867,19 +798,20 @@ void tftDisplay() {
 
   // 2 строка
   // lcd.setCursor(0, 1);
-  Serial.println("F=");
+  s1+= "F="; //  Serial.println("F=");
   //lcd.setCursor(3, 1);                   //1 строка 7 позиция
   float freq_tic = ifreq;
   float kHz = freq_tic / 1000;
-  Serial.println(kHz, 0);
-  Serial.println("kHz");
+  s1+= String(kHz); //Serial.println(kHz, 0);
+  s1+= "kHz  "; //(Serial.println("kHz");
 
   // 2 строка
   //lcd.setCursor(9, 1);
-  Serial.println("I=");
+  s1+= "I=";  //Serial.println("I=");
   //lcd.setCursor(11, 1);
-  Serial.println(Data_ina219 * 2);
-  Serial.println("ma");
+  s1+= String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
+  s1+= "ma";  //Serial.println("ma");
+  tft.drawCentreString(s1, 120, 280, 3);
 }
 
 
@@ -1178,12 +1110,11 @@ void loop() {
 
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
+    tftDisplay();
 #ifdef LCD_RUS
     goZepper();
-    // setZepper();
 #else
     goZepper();
-    //  setZepper1();
 #endif
   }
 
@@ -1288,6 +1219,7 @@ void goZepper() {
         Serial.println(Cicle.Exposite / 60);
         Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+        tftDisplay();
         //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
@@ -1296,6 +1228,7 @@ void goZepper() {
           Serial.println(" секунд");
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+          tftDisplay();
           //delay(Cicle.Pause * 1000);
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
         }
@@ -1330,6 +1263,7 @@ void goZepper() {
         Serial.println(Cicle.Exposite / 60);
         Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+        tftDisplay();
         // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
@@ -1338,6 +1272,7 @@ void goZepper() {
           Serial.println(" секунд");
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+          tftDisplay();
           // delay(Cicle.Pause * 1000);
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
         }
