@@ -39,7 +39,7 @@
 // Определения
 #define WIFI                             // Используем модуль вайфая
 #define DEBUG                          // Замаркировать если не нужны тесты
-#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
+//#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
 #define HOURS(x) (MINUTES(x) * 60UL)
@@ -54,8 +54,12 @@
 #define ROTARY_ENCODER_A_PIN 26 // Rotaty Encoder A  // orig16
 #define ROTARY_ENCODER_B_PIN 27 // Rotaty Encoder B  // orig17
 #define ROTARY_ENCODER_BUTTON_PIN 35
-#define PIN_ENC_BUTTON 35       // отдельная кнопка, для пробы
+#define PIN_ENC_BUTTON ROTARY_ENCODER_BUTTON_PIN     // отдельная кнопка, для пробы
 #define  MCP41010MOD            // библиотека с разрешением 255 единиц (аналог MCP4151)
+
+// SD нужную включить, по умолчанию файловая система в SPIFFS
+//#define SD_CARD
+//#define SD_CARD_MMC
 
 #if (defined(ESP32))
 #ifdef WIFI
@@ -76,11 +80,7 @@
 #include "SD.h"
 #include "config.h"
 #include "driver/pcnt.h"
-//#include "AiEsp32RotaryEncoder.h"
 #include "Arduino.h"
-
-//#define SD_CARD
-//#define SD_CARD_MMC
 
 #include <Ticker.h>
 Ticker my_encoder;
@@ -94,9 +94,9 @@ float encPeriod = 0.05;
 #define I2C_SCK     22    // LCD1602 SCK
 
 //AD9833
-#define AD9833_MISO 12 //19
-#define AD9833_MOSI 13 //23
-#define AD9833_SCK  14 //18
+#define AD9833_MISO 19    //12 //19
+#define AD9833_MOSI 23    //13 //23
+#define AD9833_SCK  18    //14 //18
 #define AD9833_CS   15
 
 //SD!!! ONLY
@@ -106,9 +106,9 @@ float encPeriod = 0.05;
 #define SD_CS    5
 
 //MCP41010
-#define  MCP41x1_SCK   18 //18 //14 // Define SCK pin for MCP4131 or MCP41010
-#define  MCP41x1_MOSI  23 //23 //13 // Define MOSI pin for MCP4131 or MCP41010
 #define  MCP41x1_MISO  19 //19 //12 // Define MISO pin for MCP4131 or MCP41010
+#define  MCP41x1_MOSI  23 //23 //13 // Define MOSI pin for MCP4131 or MCP41010
+#define  MCP41x1_SCK   18 //18 //14 // Define SCK pin for MCP4131 or MCP41010
 
 #define  MCP41x1_CS    16  // Define chipselect pin for MCP41010 (CS for Volume)
 #define  MCP41x1_ALC   17 // Define chipselect pin for MCP41010 (CS for ALC)
@@ -176,13 +176,18 @@ int currentPotenciometrPercent = 127;
 
 
 //--------------- Create an AD9833 object ----------------
-#include <AD9833.h>  // Пробуем новую по ссылкам в README закладке
-//AD9833 AD(10, 11, 13);     // SW SPI over the HW SPI pins (UNO);
-//AD9833 Ad9833(AD9833_CS);  // HW SPI Defaults to 25MHz internal reference frequency
-AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
+/*
+  #include <AD9833.h>  // Пробуем новую по ссылкам в README закладке
+  //AD9833 AD(10, 11, 13);     // SW SPI over the HW SPI pins (UNO);
+  //AD9833 Ad9833(AD9833_CS);  // HW SPI Defaults to 25MHz internal reference frequency
+  AD9833 Ad9833(AD9833_CS, AD9833_MOSI, AD9833_SCK); // SW SPI speed 250kHz
+*/
+#include <MD_AD9833.h>
+//MD_AD9833  Ad9833(PIN_FSYNC);  // Hardware SPI
+MD_AD9833  Ad9833(AD9833_MOSI, AD9833_SCK, AD9833_CS); // Arbitrary SPI pins
+
 
 /******* Простой энкодер *******/
-
 
 // Дисплей TFT ILI-9341
 #define TFT_GREY 0x5AEB
@@ -193,9 +198,9 @@ TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 //    *** Используемые подпрограммы выносим сюда ***   //
 /*--------------------------------------------------------------------------
         Timer ISR
----------------------------------------------------------------------------*/
+  ---------------------------------------------------------------------------*/
 hw_timer_t * timer = NULL;
-void IRAM_ATTR onTimer(){}
+void IRAM_ATTR onTimer() {}
 
 
 // переменные для часиков
@@ -443,21 +448,21 @@ void printStruct() {
 
 /*-----------------------------------------------------------------------------------------------
         Alternative Loop (core0)
-------------------------------------------------------------------------------------------------*/
+  ------------------------------------------------------------------------------------------------*/
 void task0(void* arg)
 {
-     while (1)
-     {    
-         pcnt_get_counter_value(PCNT_UNIT_0, &RE_Count);          
-         static int count; //=RE_Count;
-         if(count!= RE_Count/4){
-          count = RE_Count/4;
-          Serial.println(count);    
-         }
-         //pcnt_counter_clear(PCNT_UNIT_0);
-         //Serial.println(count);                 
-         delay(1);
-     }
+  while (1)
+  {
+    pcnt_get_counter_value(PCNT_UNIT_0, &RE_Count);
+    static int count; //=RE_Count;
+    if (count != RE_Count / 4) {
+      count = RE_Count / 4;
+      Serial.println(count);
+    }
+    //pcnt_counter_clear(PCNT_UNIT_0);
+    //Serial.println(count);
+    delay(1);
+  }
 }
 
 
@@ -519,28 +524,6 @@ Cl_Btn Btn1(PIN_ENC_BUTTON);  //Экземпляр обработчика для
 //
 int getALC(long freq) {
   int alc = map(freq, 50000, 1000000, 0, 255);
-  /*
-    if(freq <= 50000)alc = 0;
-    if(freq <= 100000)alc = 14;
-    if(freq <= 150000)alc = 27;
-    if(freq <= 200000)alc = 40;
-    if(freq <= 250000)alc = 53;
-    if(freq <= 300000)alc = 66;
-    if(freq <= 350000)alc = 80;
-    if(freq <= 400000)alc = 93;
-    if(freq <= 450000)alc = 106;
-    if(freq <= 500000)alc = 120;
-    if(freq <= 550000)alc = 133;
-    if(freq <= 600000)alc = 146;
-    if(freq <= 650000)alc = 160;
-    if(freq <= 700000)alc = 173;
-    if(freq <= 750000)alc = 186;
-    if(freq <= 800000)alc = 200;
-    if(freq <= 850000)alc = 213;
-    if(freq <= 900000)alc = 226;
-    if(freq <= 950000)alc = 240;
-    if(freq <= 1000000)alc = 255;
-  */
   return alc;
 }
 
@@ -647,18 +630,18 @@ unsigned long setTimerLCD(unsigned long timlcd) {
   if (timlcd == 0) {
     timlcd = oldmemTimers;
     isWorkStarted = 0;
-    lcd.setCursor(0, 1);
+    //lcd.setCursor(0, 1);
 #ifdef LCD_RUS
-    lcd.print("    СТОП!     ");
+     tft.drawCentreString("СТОП", 120, 260, 4);   //Serial.println("    СТОП!     ");
 #else
-    lcd.print("    STOP!     ");
+     tft.drawCentreString("STOP", 120, 260, 4);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
-    lcd.setCursor(0, 1);
-    lcd.print("              ");
+    // lcd.setCursor(0, 1);
+    tft.drawCentreString("      ", 120, 260, 4);  //Serial.println("              ");
   }
   return timlcd;
 }
@@ -693,12 +676,14 @@ void /*long*/ readAnalogAndSetFreqInSetup() {
       freq = FREQ_MAX;
     }
     // подаём частоту на генератор
-    Ad9833.setFrequency((float)freq, AD9833_SINE);
+    //Ad9833.setFrequency((float)freq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)freq);
     delay(20);
   }
   ifreq = freqWithMaxI;
   // подаём частоту на генератор
-  Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+  //Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)ifreq);
   prevReadAnalogTime = millis();
 }
 
@@ -718,7 +703,8 @@ void readAnalogAndSetFreqInLoop() {
       minimalFreq = FREQ_MIN;
     }
     // подаём на генератор минимальную частоту из диапазона +-10кГц
-    Ad9833.setFrequency((float)minimalFreq, AD9833_SINE);
+    //Ad9833.setFrequency((float)minimalFreq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)minimalFreq);
     delay(20);
 
     int maxValue = 0;
@@ -739,11 +725,13 @@ void readAnalogAndSetFreqInLoop() {
         freq = FREQ_MAX;
       }
       // подаём частоту на генератор
-      Ad9833.setFrequency((float)freq, AD9833_SINE);
+      //Ad9833.setFrequency((float)freq, AD9833_SINE);
+      Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)freq);
       delay(10);
     }
     ifreq = freqWithMaxI;
-    Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+    //Ad9833.setFrequency((float)ifreq, AD9833_SINE);
+    Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)ifreq);
     prevReadAnalogTime = millis();
   }
   alc_resis = getALC(ifreq); // рассчитать значение усиления сигнала
@@ -753,82 +741,157 @@ void readAnalogAndSetFreqInLoop() {
 // *** Вывод на дисплей ***
 void myDisplay() {
   // 1 строка
-  lcd.setCursor(0, 0);
+  //lcd.setCursor(0, 0);
   if (!isWorkStarted) {
 #ifdef LCD_RUS
-    lcd.print("Время-");
+    Serial.println("Время-");
 #else
-    lcd.print("Times-");
+    Serial.println("Times-");
 #endif
-    lcd.print(memTimers / 60000);
+    Serial.println(memTimers / 60000);
     if (memTimers / 60000 > 0) {
 #ifdef LCD_RUS
-      lcd.print(" мин. ");
+      Serial.println(" мин. ");
 #else
-      lcd.print(" min. ");
+      Serial.println(" min. ");
 #endif
     } else {
 #ifdef LCD_RUS
-      lcd.print("0 мин. ");
+      Serial.println("0 мин. ");
 #else
-      lcd.print("0 min. ");
+      Serial.println("0 min. ");
 #endif
     }
   } else {
-    lcd.print("T-");
+    Serial.println("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
-      lcd.print(memTimers / 1000 / 60);
+      Serial.println(memTimers / 1000 / 60);
 #ifdef LCD_RUS
-      lcd.print("мин.");
+      Serial.println("мин.");
 #else
-      lcd.print("min.");
+      Serial.println("min.");
 #endif
     } else {
       // если меньше минуты, то показываем секунды
-      lcd.print(memTimers / 1000);
+      Serial.println(memTimers / 1000);
 #ifdef LCD_RUS
-      lcd.print("сек.");
+      Serial.println("сек.");
 #else
-      lcd.print("sek.");
+      Serial.println("sek.");
 #endif
     }
-    lcd.print(" U=");
+    Serial.println(" U=");
 #ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
-    lcd.print(map(currentPotenciometrPercent, 1, 255, 1, 100));
+    Serial.println(map(currentPotenciometrPercent, 1, 255, 1, 100));
 #else
-    lcd.print(map(currentPotenciometrPercent, 1, 127, 1, 100));
+    Serial.println(map(currentPotenciometrPercent, 1, 127, 1, 100));
 #endif
-    lcd.print("%  ");
+    Serial.println("%  ");
   }
 
   // 2 строка
-  lcd.setCursor(0, 1);
-  lcd.print("F=");
+  // lcd.setCursor(0, 1);
+  Serial.println("F=");
   //lcd.setCursor(3, 1);                   //1 строка 7 позиция
   float freq_tic = ifreq;
   float kHz = freq_tic / 1000;
-  lcd.print(kHz, 0);
-  lcd.print("kHz");
+  Serial.println(kHz, 0);
+  Serial.println("kHz");
 
   // 2 строка
-  lcd.setCursor(9, 1);
-  lcd.print("I=");
-  lcd.setCursor(11, 1);
-  lcd.print(Data_ina219 * 2);
-  lcd.print("ma");
+  //lcd.setCursor(9, 1);
+  Serial.println("I=");
+  //lcd.setCursor(11, 1);
+  Serial.println(Data_ina219 * 2);
+  Serial.println("ma");
 }
 
-int readSqlDB(){
+
+String s = "";
+
+void tftDisplay() {
+  // 1 строка
+  //lcd.setCursor(0, 0);
+  if (!isWorkStarted) {
+   // String s = "";
+#ifdef LCD_RUS
+    s += "Время-"; //Serial.println("Время-");
+#else
+    s += "Times-"; //Serial.println("Times-");
+#endif
+    s += String(memTimers / 60000); //Serial.println(memTimers / 60000);
+    if (memTimers / 60000 > 0) {
+#ifdef LCD_RUS
+    s += " мин. ";  //Serial.println(" мин. ");
+#else
+    s += " min. ";  //Serial.println(" min. ");
+#endif
+    } else {
+#ifdef LCD_RUS
+    s += "0 мин. "; // Serial.println("0 мин. ");
+#else
+    s += "0 min. "; //  Serial.println("0 min. ");
+#endif
+    }
+  } else {
+    Serial.println("T-");
+    if (memTimers > 60000) {
+      // если больше минуты, то показываем минуты
+      Serial.println(memTimers / 1000 / 60);
+#ifdef LCD_RUS
+     s += "мин."; // Serial.println("мин.");
+#else
+     s += "min."; // Serial.println("min.");
+#endif
+    } else {
+      // если меньше минуты, то показываем секунды
+      Serial.println(memTimers / 1000);
+#ifdef LCD_RUS
+      s += "сек."; //Serial.println("сек.");
+#else
+      s += "sek."; //Serial.println("sek.");
+#endif
+    }
+    s += " U="; //Serial.println(" U=");
+#ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
+    //itoa(numerInTable, buffers, 10);
+    s += String(map(currentPotenciometrPercent, 1, 255, 1, 100)); //Serial.println(map(currentPotenciometrPercent, 1, 255, 1, 100));
+#else
+    s += String(map(currentPotenciometrPercent, 1, 127, 1, 100));  //Serial.println(map(currentPotenciometrPercent, 1, 127, 1, 100));
+#endif
+    s += "%  "; //Serial.println("%  ");
+  }
+   tft.drawCentreString(s, 120, 260, 3);
+
+  // 2 строка
+  // lcd.setCursor(0, 1);
+  Serial.println("F=");
+  //lcd.setCursor(3, 1);                   //1 строка 7 позиция
+  float freq_tic = ifreq;
+  float kHz = freq_tic / 1000;
+  Serial.println(kHz, 0);
+  Serial.println("kHz");
+
+  // 2 строка
+  //lcd.setCursor(9, 1);
+  Serial.println("I=");
+  //lcd.setCursor(11, 1);
+  Serial.println(Data_ina219 * 2);
+  Serial.println("ma");
+}
+
+
+int readSqlDB() {
 #ifdef SD_CARD_MMC
-   SPI.begin();
-   SD_MMC.begin();
+  SPI.begin();
+  SD_MMC.begin();
 #else
 #ifdef SD_CARD
-   //SPI.begin(-1,-1,-1,SD_CS);
-   SD.begin(SD_CS);
-   //SPI.begin();
-   //SD.begin();
+  //SPI.begin(-1,-1,-1,SD_CS);
+  SD.begin(SD_CS);
+  //SPI.begin();
+  //SD.begin();
 #else
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("Failed to mount file system");
@@ -836,166 +899,6 @@ int readSqlDB(){
   }
 #endif
 #endif
-
-  sqlite3* db;
-  sqlite3_initialize();
-  int rc = sqlite3_open(DBName /*"/spiffs/zepper.db"*/, &db);
-    if (rc) {
-    printf("Can't open database: %s\n", sqlite3_errmsg(db));
-    sqlite3_close(db);
-    return (1);
-  }
-
-  // Принимающий массив передаётся чертвёртым параметром!
-  // Формируем строки запросов к таблицам базы данных
-  itoa(numerInTable, buffers, 10);
-  queryFreq  += String(buffers);
-  queryExpo  += String(buffers);
-  queryPause += String(buffers);
-  queryGen   += String(buffers);
-  querySig   += String(buffers);
-
-  Serial.println();
-  Serial.print("миллис начала = ");
-  unsigned long gomill = millis();
-  Serial.println(gomill);
-  Serial.println();
-
-  //заполним массив частот
-  rc = sqlite3_exec(db, queryFreq.c_str(), callback, zepDbFreq, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-    // ПЕЧАТЬ массива для проверки
-#ifdef DEBUG    
-    for (int i = 0; i < sizeof(zepDbFreq) / sizeof(zepDbFreq[0]); i++) {
-      printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
-    }
-#endif    
-  }
-  Serial.print(queryFreq);
-  Serial.println("  - Обработан");
-
-  //заполним массив экспозиций
-  rc = sqlite3_exec(db, queryExpo.c_str(), callback, zepDbExpo, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-#ifdef DEBUG     
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbExpo) / sizeof(zepDbExpo[0]); i++) {
-      printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
-    }
-#endif    
-  }
-  Serial.print(queryExpo);
-  Serial.println("  - Обработан");
-
-  //заполним массив пауз
-  rc = sqlite3_exec(db, queryPause.c_str(), callback, zepDbPause, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-#ifdef DEBUG     
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbPause) / sizeof(zepDbPause[0]); i++) {
-      printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
-    }
-#endif    
-  }
-  Serial.print(queryPause);
-  Serial.println("  - Обработан");
-
-  //заполним массив режимов генератора
-  rc = sqlite3_exec(db, queryGen.c_str(), callback, zepDbModeGen, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-#ifdef DEBUG     
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbModeGen) / sizeof(zepDbModeGen[0]); i++) {
-      printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
-    }
-#endif    
-  }
-  Serial.print(queryGen);
-  Serial.println("  - Обработан");
-
-  //заполним массив режимов вида сигнала генератора
-  rc = sqlite3_exec(db, querySig.c_str(), callback, zepDbModeSig, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    fprintf(stderr, "SQL error: %s\n", zErrMsg);
-    sqlite3_free(zErrMsg);
-  }
-  else {
-#ifdef DEBUG     
-    // ПЕЧАТЬ массива для проверки
-    for (int i = 0; i < sizeof(zepDbModeSig) / sizeof(zepDbModeSig[0]); i++) {
-      printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
-    }
-#endif    
-  }
-  Serial.print(querySig);
-  Serial.println("  - Обработан");
-
-  Serial.println();
-  Serial.print("миллис окончания = ");
-  Serial.println(millis());
-  Serial.print("Время обработки базы = ");
-  Serial.print((float)(millis() - gomill) / 1000, 3);
-  Serial.println(" сек");
-  Serial.println();
-
-  sqlite3_close(db);
-  setStructure(0);
-  printStruct();
-
-  return 0;
-}
-
-
-int readSQLite3() {
-  printf("Go on!!!\n\n");
-  
-
-  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
-    Serial.println("Failed to mount file system");
-    return 0;
-  }
-
-  // list SPIFFS contents
-  File root = SPIFFS.open("/");
-  if (!root) {
-    Serial.println("- failed to open directory");
-    return 0;
-  }
-
-  if (!root.isDirectory()) {
-    Serial.println(" - not a directory");
-    return 0;
-  }
-
-  File file = root.openNextFile();
-  while (file) {
-    if (file.isDirectory()) {
-      Serial.print("  DIR : ");
-      Serial.println(file.name());
-    } else {
-      Serial.print("  FILE: ");
-      Serial.print(file.name());
-      Serial.print("\tSIZE: ");
-      Serial.println(file.size());
-    }
-    file = root.openNextFile();
-  }
 
   sqlite3* db;
   sqlite3_initialize();
@@ -1029,9 +932,11 @@ int readSQLite3() {
   }
   else {
     // ПЕЧАТЬ массива для проверки
+#ifdef DEBUG
     for (int i = 0; i < sizeof(zepDbFreq) / sizeof(zepDbFreq[0]); i++) {
       printf("zepDbFreq[%d]=%d\n", i, zepDbFreq[i]);
     }
+#endif
   }
   Serial.print(queryFreq);
   Serial.println("  - Обработан");
@@ -1043,10 +948,12 @@ int readSQLite3() {
     sqlite3_free(zErrMsg);
   }
   else {
+#ifdef DEBUG
     // ПЕЧАТЬ массива для проверки
     for (int i = 0; i < sizeof(zepDbExpo) / sizeof(zepDbExpo[0]); i++) {
       printf("zepDbExpo[%d]=%d\n", i, zepDbExpo[i]);
     }
+#endif
   }
   Serial.print(queryExpo);
   Serial.println("  - Обработан");
@@ -1058,10 +965,12 @@ int readSQLite3() {
     sqlite3_free(zErrMsg);
   }
   else {
+#ifdef DEBUG
     // ПЕЧАТЬ массива для проверки
     for (int i = 0; i < sizeof(zepDbPause) / sizeof(zepDbPause[0]); i++) {
       printf("zepDbPause[%d]=%d\n", i, zepDbPause[i]);
     }
+#endif
   }
   Serial.print(queryPause);
   Serial.println("  - Обработан");
@@ -1073,10 +982,12 @@ int readSQLite3() {
     sqlite3_free(zErrMsg);
   }
   else {
+#ifdef DEBUG
     // ПЕЧАТЬ массива для проверки
     for (int i = 0; i < sizeof(zepDbModeGen) / sizeof(zepDbModeGen[0]); i++) {
       printf("zepDbModeGen[%d]=%d\n", i, zepDbModeGen[i]);
     }
+#endif
   }
   Serial.print(queryGen);
   Serial.println("  - Обработан");
@@ -1088,10 +999,12 @@ int readSQLite3() {
     sqlite3_free(zErrMsg);
   }
   else {
+#ifdef DEBUG
     // ПЕЧАТЬ массива для проверки
     for (int i = 0; i < sizeof(zepDbModeSig) / sizeof(zepDbModeSig[0]); i++) {
       printf("zepDbModeSig[%d]=%d\n", i, zepDbModeSig[i]);
     }
+#endif
   }
   Serial.print(querySig);
   Serial.println("  - Обработан");
@@ -1107,9 +1020,10 @@ int readSQLite3() {
   sqlite3_close(db);
   setStructure(0);
   printStruct();
-
   return 0;
+
 }    // ************** END SQLITE3 *************** //
+
 
 void testMCP41010() {
   d_resis = 255;
@@ -1133,6 +1047,8 @@ void testMCP41010() {
 
 //************************** SETUP *************************/
 void setup() {
+
+  // Управляющие
   pinMode(ON_OFF_CASCADE_PIN, OUTPUT);
   pinMode(PIN_ZUM, OUTPUT);
   pinMode(PIN_RELE, OUTPUT);
@@ -1140,19 +1056,31 @@ void setup() {
   digitalWrite(PIN_ZUM, LOW);
   digitalWrite(PIN_RELE, LOW);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+
+  // Энкодер
   pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLUP);
   pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLUP);
   pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT_PULLUP);
-  
+
+  // устройства SPI
+  pinMode(AD9833_CS, OUTPUT);   // AD9833
+  pinMode(MCP41x1_CS, OUTPUT);  // MCP41010 - 2
+  pinMode(MCP41x1_ALC, OUTPUT); // MCP41010 - 1
+  pinMode(SD_CS, OUTPUT);       // SD
+  digitalWrite(AD9833_CS, HIGH);   // OFF
+  digitalWrite(MCP41x1_CS, HIGH);  // OFF
+  digitalWrite(MCP41x1_ALC, HIGH); // OFF
+  digitalWrite(SD_CS, HIGH);       // OFF
+
   Serial.begin(115200);
   Serial.println("START");
-
-  // lcd.begin();  // Зависит от версии библиотеки
-  lcd.init();     //
-  lcd.backlight();
   delay(100);
 
-  Btn1.init();
+  // Читаем базу
+  // readSQLite3();
+  readSqlDB();                        // Чтение базы в массивы с трёх возможных накопителей
+
+  Btn1.init();                        // Инициализируем кнопку
 
   ina219.begin(0x40);                 // (44) i2c address 64=0x40 68=0х44 исправлять и в ina219.h одновременно
   ina219.configure(0, 2, 12, 12, 7);  // 16S -8.51ms
@@ -1161,7 +1089,7 @@ void setup() {
   //SPI.begin();    // Для библиотеки MCP4xxxx обязательно было, теперь нельзя!!!
   Potentiometer.begin();
   Alc.begin();
-  
+
   // сбрасываем потенциометр в 0%
   resetPotenciometer();
   // после сброса устанавливаем значение по умолчанию
@@ -1171,23 +1099,17 @@ void setup() {
   delay(100);
 
 
-  // This MUST be the first command after declaring the AD9833 object
-  Ad9833.begin();              // The loaded defaults are 1000 Hz SINE_WAVE using REG0
-  Ad9833.reset();              // Ресет после включения питания
-  Ad9833.setSPIspeed(freqSPI); // Частота SPI для AD9833 установлена 4 MHz
-  Ad9833.setWave(AD9833_OFF);  // Turn OFF the output
-  delay(10);
-  Ad9833.setWave(AD9833_SINE);  // Turn ON and freq MODE SINE the output
-
-  // выставляем минимальную частоту для цикла определения максимального тока
-  Ad9833.setFrequency((float)FREQ_MIN, AD9833_SINE);
+  // Инициализируем AD9833
+  Ad9833.begin();          //
+  Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)FREQ_MIN);
+  Ad9833.setMode(MD_AD9833::MODE_SINE);
 
   Serial.print("freq=");
   Serial.print(FREQ_MIN);
   Serial.println(" Hz");
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
-  myDisplay();
+  tftDisplay();
   delay(100);
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
@@ -1203,52 +1125,47 @@ void setup() {
   testTFT(10000);
 #endif
 
-  // Читаем базу
-  // readSQLite3();
-  readSqlDB();      // Чтение базы в массивы с трёх возможных накопителей
-
-
   // Энкодер
-   //--------- create tasks on core0 --------------------------------
-    xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
+  //--------- create tasks on core0 --------------------------------
+  xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
 
-    //--------- Set up Interrupt Timer -------------------------------
-    timer = timerBegin(0, 80, true); //use Timer0, div80 for 1us clock
-    timerAttachInterrupt(timer, &onTimer, true);
-    timerAlarmWrite(timer, 10000, true); // T=10000us
-    timerAlarmEnable(timer); // Start Timer
-    
-        //--- Counter setup for Rotary Encoder ---------------------
-    pcnt_config_t pcnt_config_A;// structure for A   
-    pcnt_config_t pcnt_config_B;// structure for B
-    //
-    pcnt_config_A.pulse_gpio_num = ROTARY_ENCODER_A_PIN;
-    pcnt_config_A.ctrl_gpio_num = ROTARY_ENCODER_B_PIN;
-    pcnt_config_A.lctrl_mode = PCNT_MODE_REVERSE;
-    pcnt_config_A.hctrl_mode = PCNT_MODE_KEEP;
-    pcnt_config_A.channel = PCNT_CHANNEL_0;
-    pcnt_config_A.unit = PCNT_UNIT_0;
-    pcnt_config_A.pos_mode = PCNT_COUNT_INC;
-    pcnt_config_A.neg_mode = PCNT_COUNT_DEC;
-    pcnt_config_A.counter_h_lim = 10000;
-    pcnt_config_A.counter_l_lim = -10000;
-    //
-    pcnt_config_B.pulse_gpio_num = ROTARY_ENCODER_B_PIN;
-    pcnt_config_B.ctrl_gpio_num = ROTARY_ENCODER_A_PIN;
-    pcnt_config_B.lctrl_mode = PCNT_MODE_KEEP;
-    pcnt_config_B.hctrl_mode = PCNT_MODE_REVERSE;
-    pcnt_config_B.channel = PCNT_CHANNEL_1;
-    pcnt_config_B.unit = PCNT_UNIT_0;
-    pcnt_config_B.pos_mode = PCNT_COUNT_INC;
-    pcnt_config_B.neg_mode = PCNT_COUNT_DEC;
-    pcnt_config_B.counter_h_lim = 10000;
-    pcnt_config_B.counter_l_lim = -10000;
-    //
-    pcnt_unit_config(&pcnt_config_A);//Initialize A
-    pcnt_unit_config(&pcnt_config_B);//Initialize B
-    pcnt_counter_pause(PCNT_UNIT_0);
-    pcnt_counter_clear(PCNT_UNIT_0);
-    pcnt_counter_resume(PCNT_UNIT_0); //Start
+  //--------- Set up Interrupt Timer -------------------------------
+  timer = timerBegin(0, 80, true); //use Timer0, div80 for 1us clock
+  timerAttachInterrupt(timer, &onTimer, true);
+  timerAlarmWrite(timer, 10000, true); // T=10000us
+  timerAlarmEnable(timer); // Start Timer
+
+  //--- Counter setup for Rotary Encoder ---------------------
+  pcnt_config_t pcnt_config_A;// structure for A
+  pcnt_config_t pcnt_config_B;// structure for B
+  //
+  pcnt_config_A.pulse_gpio_num = ROTARY_ENCODER_A_PIN;
+  pcnt_config_A.ctrl_gpio_num = ROTARY_ENCODER_B_PIN;
+  pcnt_config_A.lctrl_mode = PCNT_MODE_REVERSE;
+  pcnt_config_A.hctrl_mode = PCNT_MODE_KEEP;
+  pcnt_config_A.channel = PCNT_CHANNEL_0;
+  pcnt_config_A.unit = PCNT_UNIT_0;
+  pcnt_config_A.pos_mode = PCNT_COUNT_INC;
+  pcnt_config_A.neg_mode = PCNT_COUNT_DEC;
+  pcnt_config_A.counter_h_lim = 10000;
+  pcnt_config_A.counter_l_lim = -10000;
+  //
+  pcnt_config_B.pulse_gpio_num = ROTARY_ENCODER_B_PIN;
+  pcnt_config_B.ctrl_gpio_num = ROTARY_ENCODER_A_PIN;
+  pcnt_config_B.lctrl_mode = PCNT_MODE_KEEP;
+  pcnt_config_B.hctrl_mode = PCNT_MODE_REVERSE;
+  pcnt_config_B.channel = PCNT_CHANNEL_1;
+  pcnt_config_B.unit = PCNT_UNIT_0;
+  pcnt_config_B.pos_mode = PCNT_COUNT_INC;
+  pcnt_config_B.neg_mode = PCNT_COUNT_DEC;
+  pcnt_config_B.counter_h_lim = 10000;
+  pcnt_config_B.counter_l_lim = -10000;
+  //
+  pcnt_unit_config(&pcnt_config_A);//Initialize A
+  pcnt_unit_config(&pcnt_config_B);//Initialize B
+  pcnt_counter_pause(PCNT_UNIT_0);
+  pcnt_counter_clear(PCNT_UNIT_0);
+  pcnt_counter_resume(PCNT_UNIT_0); //Start
 
 }  //******** END SETUP ********//
 
@@ -1280,14 +1197,14 @@ void loop() {
     prevUpdateDataIna = millis();
   }
 
-  myDisplay();
+  tftDisplay();
 
   if ( SbLong) {
     SbLong = false;
     oldmemTimers = memTimers;
     isWorkStarted = 1;
     digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-    myDisplay();
+    tftDisplay();
     readAnalogAndSetFreqInSetup();
     readDamp(currentEncoderPos);
     timMillis = millis();
@@ -1348,20 +1265,27 @@ void goZepper() {
         Serial.println(" %");
 
         digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+        //Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+        //Ad9833.setMode(MD_AD9833::Cicle.ModeSig);
+        if (Cicle.ModeSig == 1)
+          Ad9833.setMode(MD_AD9833::MODE_SINE);
+        if (Cicle.ModeSig == 2)
+          Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+
+        Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
         readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
 
-        lcd.setCursor(0, 0);
-        lcd.print("  F - ");
-        lcd.print((float)Cicle.Freq / 1000, 3);
-        lcd.print(" KHz  ");
-        lcd.setCursor(0, 1);
-        lcd.print("ЖдёM ");
-        lcd.print(Cicle.Exposite / 60);
-        lcd.print("-е минуты");
+        //lcd.setCursor(0, 0);
+        Serial.println("  F - ");
+        Serial.println((float)Cicle.Freq / 1000, 3);
+        Serial.println(" KHz  ");
+        //lcd.setCursor(0, 1);
+        Serial.println("ЖдёM ");
+        Serial.println(Cicle.Exposite / 60);
+        Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
         //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
@@ -1383,20 +1307,27 @@ void goZepper() {
         Serial.println(" %");
 
         digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+        //Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
+
+        if (Cicle.ModeSig == 1)
+          Ad9833.setMode(MD_AD9833::MODE_SINE);
+        if (Cicle.ModeSig == 2)
+          Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
+
+        Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
         readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
 
-        lcd.setCursor(0, 0);
-        lcd.print("  F - ");
-        lcd.print((float)Cicle.Freq / 1000, 3);
-        lcd.print(" KHz  ");
-        lcd.setCursor(0, 1);
-        lcd.print("ЖдёM ");
-        lcd.print(Cicle.Exposite / 60);
-        lcd.print("-е минуты");
+        //lcd.setCursor(0, 0);
+        Serial.println("  F - ");
+        Serial.println((float)Cicle.Freq / 1000, 3);
+        Serial.println(" KHz  ");
+        //lcd.setCursor(0, 1);
+        Serial.println("ЖдёM ");
+        Serial.println(Cicle.Exposite / 60);
+        Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
         // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
@@ -1441,9 +1372,13 @@ void readDamp(int pw) {
 #ifdef DEBUG
   Serial.print("Разрешение выхода = ");
   bool on_off = digitalRead(ON_OFF_CASCADE_PIN);
-  if (on_off) { Serial.println("Включено");}
-    else {Serial.println("Выключено");}
- 
+  if (on_off) {
+    Serial.println("Включено");
+  }
+  else {
+    Serial.println("Выключено");
+  }
+
   Serial.print("Выход сигнала на разъём ");
   if (digitalRead(PIN_RELE)) {
     Serial.println("ZEPPER");
@@ -1476,7 +1411,7 @@ void readDamp(int pw) {
 //  G14 - AD9833_SCK  14 <-> AD9833_SCLK   <-> TFT_SCK
 //  G15 - AD9833_CS   15 <-> AD9833_FSYNC
 //  G16 - - - - - - - - - - - - - - - - -  <-> TFT_RST
-  
+
 //  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
 //  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
 //  G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010
@@ -1494,8 +1429,8 @@ void readDamp(int pw) {
 //  G31 -
 //  G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
 //  G33 - PIN_ZUM                   33 <-> BUZZER
-//  G34 - 
-//  G35 - 
-//  G36 - 
+//  G34 -
+//  G35 -
+//  G36 -
 
 //  G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
