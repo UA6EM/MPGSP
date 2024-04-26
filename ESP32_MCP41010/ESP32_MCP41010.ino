@@ -633,9 +633,9 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     isWorkStarted = 0;
     //lcd.setCursor(0, 1);
 #ifdef LCD_RUS
-     tft.drawCentreString("СТОП", 120, 260, 4);   //Serial.println("    СТОП!     ");
+    tft.drawCentreString("СТОП", 120, 260, 4);   //Serial.println("    СТОП!     ");
 #else
-     tft.drawCentreString("STOP", 120, 260, 4);   //Serial.println("    STOP!     ");
+    tft.drawCentreString("STOP", 120, 260, 4);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
@@ -746,7 +746,7 @@ String s1 = "";
 
 void tftDisplay() {
   // 1-я строка
-  if (isWorkStarted) {
+  if (!isWorkStarted) {
 #ifdef LCD_RUS
     s += "Время-"; //Serial.println("Время-");
 #else
@@ -755,15 +755,15 @@ void tftDisplay() {
     s += String(memTimers / 60000); //Serial.println(memTimers / 60000);
     if (memTimers / 60000 > 0) {
 #ifdef LCD_RUS
-    s += " мин. ";  //Serial.println(" мин. ");
+      s += " мин. ";  //Serial.println(" мин. ");
 #else
-    s += " min. ";  //Serial.println(" min. ");
+      s += " min. ";  //Serial.println(" min. ");
 #endif
     } else {
 #ifdef LCD_RUS
-    s += "0 мин. "; // Serial.println("0 мин. ");
+      s += "0 мин. "; // Serial.println("0 мин. ");
 #else
-    s += "0 min. "; //  Serial.println("0 min. ");
+      s += "0 min. "; //  Serial.println("0 min. ");
 #endif
     }
   } else {
@@ -772,9 +772,9 @@ void tftDisplay() {
       // если больше минуты, то показываем минуты
       Serial.println(memTimers / 1000 / 60);
 #ifdef LCD_RUS
-     s += "мин."; // Serial.println("мин.");
+      s += "мин."; // Serial.println("мин.");
 #else
-     s += "min."; // Serial.println("min.");
+      s += "min."; // Serial.println("min.");
 #endif
     } else {
       // если меньше минуты, то показываем секунды
@@ -794,23 +794,23 @@ void tftDisplay() {
 #endif
     s += "%  "; //Serial.println("%  ");
   }
-   tft.drawCentreString(s, 120, 260, 3);
+  tft.drawCentreString(s, 120, 260, 3);
 
   // 2 строка
   // lcd.setCursor(0, 1);
-  s1+= "F="; //  Serial.println("F=");
+  s1 += "F="; //  Serial.println("F=");
   //lcd.setCursor(3, 1);                   //1 строка 7 позиция
   float freq_tic = ifreq;
   float kHz = freq_tic / 1000;
-  s1+= String(kHz); //Serial.println(kHz, 0);
-  s1+= "kHz  "; //(Serial.println("kHz");
+  s1 += String(kHz); //Serial.println(kHz, 0);
+  s1 += "kHz  "; //(Serial.println("kHz");
 
   // 2 строка
   //lcd.setCursor(9, 1);
-  s1+= "I=";  //Serial.println("I=");
+  s1 += "I="; //Serial.println("I=");
   //lcd.setCursor(11, 1);
-  s1+= String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
-  s1+= "ma";  //Serial.println("ma");
+  s1 += String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
+  s1 += "ma"; //Serial.println("ma");
   tft.drawCentreString(s1, 120, 280, 3);
 }
 
@@ -953,8 +953,18 @@ int readSqlDB() {
   sqlite3_close(db);
   setStructure(0);
   printStruct();
-  return 0;
 
+#ifdef SD_CARD_MMC
+  SD_MMC.end();
+#else
+#ifdef SD_CARD
+  SD.end();
+#else
+  SPIFFS.end();
+#endif
+#endif
+
+  return 0;
 }    // ************** END SQLITE3 *************** //
 
 
@@ -1042,7 +1052,11 @@ void setup() {
   Serial.println(" Hz");
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
+
+#ifndef TFT_ERR
   tftDisplay();
+#endif
+
   delay(100);
 
   memTimers = availableTimers[0];  // выставляем 15 минут по умолчанию
@@ -1062,12 +1076,13 @@ void setup() {
   //--------- create tasks on core0 --------------------------------
   xTaskCreatePinnedToCore(task0, "Task0", 4096, NULL, 1, NULL, 0);
 
-  //--------- Set up Interrupt Timer -------------------------------
-  timer = timerBegin(0, 80, true); //use Timer0, div80 for 1us clock
-  timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 10000, true); // T=10000us
-  timerAlarmEnable(timer); // Start Timer
-
+  /*
+    //--------- Set up Interrupt Timer -------------------------------
+    timer = timerBegin(0, 80, true); //use Timer0, div80 for 1us clock
+    timerAttachInterrupt(timer, &onTimer, true);
+    timerAlarmWrite(timer, 10000, true); // T=10000us
+    timerAlarmEnable(timer); // Start Timer
+  */
   //--- Counter setup for Rotary Encoder ---------------------
   pcnt_config_t pcnt_config_A;// structure for A
   pcnt_config_t pcnt_config_B;// structure for B
@@ -1110,7 +1125,9 @@ void loop() {
 
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
+#ifndef TFT_ERR
     tftDisplay();
+#endif
 #ifdef LCD_RUS
     goZepper();
 #else
@@ -1129,14 +1146,18 @@ void loop() {
     prevUpdateDataIna = millis();
   }
 
+#ifndef TFT_ERR
   tftDisplay();
+#endif
 
   if ( SbLong) {
     SbLong = false;
     oldmemTimers = memTimers;
     isWorkStarted = 1;
     digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+#ifndef TFT_ERR
     tftDisplay();
+#endif
     readAnalogAndSetFreqInSetup();
     readDamp(currentEncoderPos);
     timMillis = millis();
@@ -1168,7 +1189,7 @@ void loop() {
 
 // ***************** Функция Цеппера ****************
 void goZepper() {
-  int sst = 0;   // возьмём нулевой элемент массива
+  int sst = 0;       // возьмём нулевой элемент массива
   bool fgen = false; // синус / меандр = true (отслеживание смены режима)
 
   do {
@@ -1219,7 +1240,9 @@ void goZepper() {
         Serial.println(Cicle.Exposite / 60);
         Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+#ifndef TFT_ERR
         tftDisplay();
+#endif
         //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
@@ -1228,7 +1251,9 @@ void goZepper() {
           Serial.println(" секунд");
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+#ifndef TFT_ERR
           tftDisplay();
+#endif
           //delay(Cicle.Pause * 1000);
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
         }
@@ -1263,7 +1288,9 @@ void goZepper() {
         Serial.println(Cicle.Exposite / 60);
         Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+#ifndef TFT_ERR
         tftDisplay();
+#endif
         // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
@@ -1272,7 +1299,9 @@ void goZepper() {
           Serial.println(" секунд");
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+#ifndef TFT_ERR
           tftDisplay();
+#endif
           // delay(Cicle.Pause * 1000);
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
         }
