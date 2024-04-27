@@ -52,8 +52,8 @@
 #define CORRECT_PIN A3         // Пин для внешней корректировки частоты.
 
 //ROTARY ENCODER
-#define ROTARY_ENCODER_A_PIN 26 // Rotaty Encoder A  // orig16
-#define ROTARY_ENCODER_B_PIN 27 // Rotaty Encoder B  // orig17
+#define ROTARY_ENCODER_A_PIN 27 // Rotaty Encoder A  // orig16
+#define ROTARY_ENCODER_B_PIN 26 // Rotaty Encoder B  // orig17
 #define ROTARY_ENCODER_BUTTON_PIN 35
 #define PIN_ENC_BUTTON ROTARY_ENCODER_BUTTON_PIN     // отдельная кнопка, для пробы
 #define  MCP41010MOD            // библиотека с разрешением 255 единиц (аналог MCP4151)
@@ -219,7 +219,7 @@ bool initial = 1;
 bool isduble = false;
 
 void testTFT(int times) {
-
+  int my_times = times/1000;
   if (!isduble) {
 
     isduble = true;
@@ -287,10 +287,17 @@ void testTFT(int times) {
 
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
-
+  tft.drawCentreString("                     ", 120, 260, 4); 
   while (millis() - ttt < times) {
     if (targetTime < millis()) {
       targetTime += 1000;
+      
+      String str1 = "IN PROGRESS";
+      yield();
+      tft.drawCentreString("                     ", 120, 260, 4); 
+      tft.drawNumber(--my_times, 100, 260, 4);
+     // tft.drawCentreString(str1, 120, 260, 3); 
+      
       ss++;              // Advance second
       if (ss == 60) {
         ss = 0;
@@ -338,6 +345,7 @@ void testTFT(int times) {
       tft.fillCircle(120, 121, 3, TFT_RED);
     }
   }
+      tft.drawCentreString("                     ", 120, 260, 4); 
 }
 
 static uint8_t conv2d(const char* p) {
@@ -741,11 +749,18 @@ void readAnalogAndSetFreqInLoop() {
 
 
 // *** Вывод на дисплей ***
-String s = "";
+String s = "IN PROGRESS";
 String s1 = "";
 
 void tftDisplay() {
+  s = "IN PROGRESS";
+  yield(); tft.drawCentreString(s, 120, 260, 3); 
+}
+
+/*
+void tftDisplay() {
   // 1-я строка
+  s = "";
   if (!isWorkStarted) {
 #ifdef LCD_RUS
     s += "Время-"; //Serial.println("Время-");
@@ -767,10 +782,12 @@ void tftDisplay() {
 #endif
     }
   } else {
-    Serial.println("T-");
+    s+="T-";
+    //Serial.print("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
-      Serial.println(memTimers / 1000 / 60);
+      s+= String(memTimers / 1000 / 60);
+      //Serial.println(memTimers / 1000 / 60);
 #ifdef LCD_RUS
       s += "мин."; // Serial.println("мин.");
 #else
@@ -778,7 +795,8 @@ void tftDisplay() {
 #endif
     } else {
       // если меньше минуты, то показываем секунды
-      Serial.println(memTimers / 1000);
+      // Serial.println(memTimers / 1000);
+       s+= String(memTimers / 1000);
 #ifdef LCD_RUS
       s += "сек."; //Serial.println("сек.");
 #else
@@ -794,7 +812,7 @@ void tftDisplay() {
 #endif
     s += "%  "; //Serial.println("%  ");
   }
-  tft.drawCentreString(s, 120, 260, 3);
+   yield(); tft.drawCentreString(s, 120, 260, 3);
 
   // 2 строка
   // lcd.setCursor(0, 1);
@@ -811,9 +829,9 @@ void tftDisplay() {
   //lcd.setCursor(11, 1);
   s1 += String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
   s1 += "ma"; //Serial.println("ma");
-  tft.drawCentreString(s1, 120, 280, 3);
+   yield(); tft.drawCentreString(s1, 120, 280, 3);
 }
-
+*/
 
 int readSqlDB() {
 #ifdef SD_CARD_MMC
@@ -1240,6 +1258,7 @@ void goZepper() {
         Serial.println(Cicle.Exposite / 60);
         Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+        //tftDisplay();
 #ifndef TFT_ERR
         tftDisplay();
 #endif
