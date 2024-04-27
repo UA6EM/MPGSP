@@ -295,7 +295,11 @@ void testTFT(int times) {
       String str1 = "IN PROGRESS";
       yield();
       tft.drawCentreString("                     ", 120, 260, 4); 
-      tft.drawNumber(--my_times, 100, 260, 4);
+      if(my_times <=100){
+      tft.drawNumber(--my_times, 110, 260, 4);
+      }else{
+      tft.drawNumber(--my_times, 100, 260, 4);      
+      }
      // tft.drawCentreString(str1, 120, 260, 3); 
       
       ss++;              // Advance second
