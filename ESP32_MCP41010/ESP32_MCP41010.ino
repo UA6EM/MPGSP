@@ -465,6 +465,7 @@ void task0(void* arg)
     if (count != RE_Count / 4) {
       count = RE_Count / 4;
       Serial.println(count);
+      newEncoderPos = count;
     }
     //pcnt_counter_clear(PCNT_UNIT_0);
     //Serial.println(count);
@@ -572,14 +573,14 @@ void setTimer() {
     if (timerPosition == maxTimers - 1) {
       timerPosition = 0;
     } else {
-      timerPosition += 1;
+      timerPosition += newEncoderPos - currentEncoderPos;
     }
   } else if (newEncoderPos - currentEncoderPos < 0) {
     // если энкодер крутим против часовой
     if (timerPosition == 0) {
       timerPosition = maxTimers - 1;
     } else {
-      timerPosition -= 1;
+      timerPosition -= abs(newEncoderPos - currentEncoderPos);
     }
   }
   memTimers = availableTimers[timerPosition];
@@ -608,8 +609,8 @@ void processPotenciometr() {
       currentPotenciometrPercent = d_resis;
       wiperValue = d_resis;
     } else {
-      currentPotenciometrPercent += 1;
-      wiperValue += 1;
+      currentPotenciometrPercent += newEncoderPos - currentEncoderPos; //1;
+      wiperValue += newEncoderPos - currentEncoderPos; //1;
     }
   } else if (newEncoderPos - currentEncoderPos < 0) {
     // если энкодер крутим против часовой
@@ -617,8 +618,8 @@ void processPotenciometr() {
       currentPotenciometrPercent = 1;
       wiperValue = 1;
     } else {
-      currentPotenciometrPercent -= 1;
-      wiperValue -= 1;
+      currentPotenciometrPercent -= abs(newEncoderPos - currentEncoderPos); //1;
+      wiperValue -= abs(newEncoderPos - currentEncoderPos); //1;
     }
   }
   setResistance(currentPotenciometrPercent);
@@ -1191,15 +1192,15 @@ void loop() {
 
   // если значение экодера поменялось
   if (currentEncoderPos != newEncoderPos) {
-    // если работа ещё не началась, то можем устанавливать время
+    // если работа ещё не началась, то можем устанавливать время экспозиции, если началась, то мощность
     if (isWorkStarted == 0) {
       setTimer();
     } else if (isWorkStarted == 1) {
-      // если работа ещё не началась, то можем редактировать потенциометр
+      // если работа началась, то можем редактировать потенциометром мощность
       processPotenciometr();
     }
     currentEncoderPos = newEncoderPos;
-    readDamp(currentEncoderPos);
+    readDamp(map(wiperValue, 0, 255, 0, 100));  // Значение с потенциометра в % и далее преобразовать в Вольты
   }
 } // *************** E N D  L O O P ****************
 
@@ -1252,8 +1253,8 @@ void goZepper() {
         readDamp(power);                          // Получить уровень мощности
         printModeSigToSerial(Cicle.ModeSig);
 
-        // в этом месте вывести (продублировать) бы информацию на дисплей  
-        
+        // в этом месте вывести (продублировать) бы информацию на дисплей
+
         Serial.print("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
 
@@ -1358,6 +1359,7 @@ void setStructure(int strc) {
 }
 
 void readDamp(int pw) {
+
 #ifdef DEBUG
   Serial.print("Разрешение выхода = ");
   bool on_off = digitalRead(ON_OFF_CASCADE_PIN);
@@ -1423,8 +1425,8 @@ void printTimeSerial(int t_sec) {
 void printModeSigToSerial(int m_sig) {
   Serial.print("Режим генератора - ");
   if (m_sig == 1) Serial.println("Синус");
-  if (m_sig == 2) Serial.println("Меандр");  
-  }
+  if (m_sig == 2) Serial.println("Меандр");
+}
 
 
 //  G0 - TFT CS
