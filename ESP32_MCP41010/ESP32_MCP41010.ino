@@ -289,11 +289,11 @@ void testTFT(int times) {
       if (my_times <= 100) {
         tft.drawNumber(--my_times, 110, 260, 4);
         yield();
-        tft.drawCentreString("Zepper is ON", 120, 285, 3);
+        tft.drawString("Zepper is ON", 120, 285, 3);
       } else {
         tft.drawNumber(--my_times, 100, 260, 4);
         yield();
-        tft.drawCentreString("Zepper is ON", 120, 285, 3);
+        tft.drawString("Zepper is ON", 120, 285, 3);
       }
       // tft.drawCentreString(str1, 120, 260, 3);
 
