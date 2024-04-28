@@ -295,8 +295,6 @@ void testTFT(int times) {
         yield();
         tft.drawString("Zepper is ON", 120, 285, 3);
       }
-      // tft.drawCentreString(str1, 120, 260, 3);
-
 
       ss++;              // Advance second
       if (ss == 60) {
@@ -1252,12 +1250,10 @@ void goZepper() {
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
         readDamp(power);                          // Получить уровень мощности
+        printModeSigToSerial(Cicle.ModeSig);
 
-        //lcd.setCursor(0, 0);
-        Serial.print("F - ");
-        Serial.print((float)Cicle.Freq / 1000, 3);
-        Serial.println(" KHz  ");
-        //lcd.setCursor(0, 1);
+        // в этом месте вывести (продублировать) бы информацию на дисплей  
+        
         Serial.print("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
 
@@ -1302,13 +1298,10 @@ void goZepper() {
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
         readDamp(power);    // Получить уровень мощности
+        printModeSigToSerial(Cicle.ModeSig);
 
-        //lcd.setCursor(0, 0);
-        Serial.print("F - ");
-        Serial.print((float)Cicle.Freq / 1000, 3);
-        Serial.println(" KHz  ");
+        // Здесть может быть вывод на TFT экран
 
-        //lcd.setCursor(0, 1);
         Serial.println("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
         testTFT(Cicle.Exposite * 1000);
@@ -1320,8 +1313,6 @@ void goZepper() {
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
           Serial.print("Пауза ");
-          //Serial.print(Cicle.Pause);
-          //Serial.println(" секунд");
           printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
@@ -1355,6 +1346,7 @@ void goZepper() {
   tft.drawCentreString("                     ", 120, 260, 4);
   tft.drawCentreString("Zepper is OFF", 120, 285, 4);
 }
+// ******** Конец процедуры ZEPPER ********* //
 
 
 void setStructure(int strc) {
@@ -1428,6 +1420,11 @@ void printTimeSerial(int t_sec) {
   Serial.println();
 }
 
+void printModeSigToSerial(int m_sig) {
+  Serial.print("Режим генератора - ");
+  if (m_sig == 1) Serial.println("Синус");
+  if (m_sig == 2) Serial.println("Меандр");  
+  }
 
 
 //  G0 - TFT CS
