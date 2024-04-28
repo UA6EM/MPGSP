@@ -278,6 +278,7 @@ void testTFT(int times) {
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
   tft.drawCentreString("                     ", 120, 260, 4);
+
   while (millis() - ttt < times) {
     if (targetTime < millis()) {
       targetTime += 1000;
@@ -287,10 +288,15 @@ void testTFT(int times) {
       tft.drawCentreString("                     ", 120, 260, 4);
       if (my_times <= 100) {
         tft.drawNumber(--my_times, 110, 260, 4);
+        yield();
+        tft.drawCentreString("Zepper is ON", 120, 285, 3);
       } else {
         tft.drawNumber(--my_times, 100, 260, 4);
+        yield();
+        tft.drawCentreString("Zepper is ON", 120, 285, 3);
       }
       // tft.drawCentreString(str1, 120, 260, 3);
+
 
       ss++;              // Advance second
       if (ss == 60) {
@@ -1206,9 +1212,7 @@ void loop() {
 void goZepper() {
   int sst = 0;       // возьмём нулевой элемент массива
   bool fgen = false; // синус / меандр = true (отслеживание смены режима)
-  
-  tft.drawCentreString("Zepper is ON", 120, 285, 3);
-  
+
   do {
 #ifdef DEBUG
     printStruct();
@@ -1227,7 +1231,9 @@ void goZepper() {
         stop_Buzzer();
       }
 
-      if (!fgen) {                              // *** Режим синуса ***
+      // tft.drawCentreString("Zepper is ON", 120, 285, 3); // Очистка экрана стирает вывод
+
+      if (!fgen) {                              // *** Выход генератора - STATIC ***
         digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
         int power = 20;                         // Очки, половинная мощность (5 вольт) - 20%
         setResistance(map(power, 0, 100, 0, d_resis));
@@ -1256,6 +1262,7 @@ void goZepper() {
         printTimeSerial(Cicle.Exposite);
 
         // Выводим часы по времени экспозиции, опроса кнопок не реализовано (временно)
+
         testTFT(Cicle.Exposite * 1000);
 
 #ifndef TFT_ERR
@@ -1342,11 +1349,11 @@ void goZepper() {
   setStructure(sst);
 
   isWorkStarted = false; // рабочий режим окончен
-  
+
   // Почистим строку экрана
   yield();
   tft.drawCentreString("                     ", 120, 260, 4);
-  tft.drawCentreString("ZEPPER IS OFF", 120, 285, 4);
+  tft.drawCentreString("Zepper is OFF", 120, 285, 4);
 }
 
 
