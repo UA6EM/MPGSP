@@ -1091,6 +1091,7 @@ void setup() {
 
 #ifdef DEBUG
   testTFT(10000);
+  //old_mm = 1;
 #endif
 
   // Энкодер
@@ -1181,10 +1182,10 @@ void loop() {
     timMillis = millis();
   }
 
-// *********** Рабочий режим ***************//
+  // *********** Рабочий режим ***************//
   if (isWorkStarted == 1) {
     memTimers = setTimerLCD(memTimers);
-    
+
     if (mill - prevUpdateDataIna > 1000 * 2) {
       readAnalogAndSetFreqInLoop();
       Data_ina219 = ina219.shuntCurrent() * 1000;
@@ -1221,6 +1222,7 @@ void goZepper() {
 #ifdef DEBUG
     printStruct();
 #endif
+    Serial.println();
 
     if (Cicle.Freq > 0) {                      // Если в массиве частота не 0 то работаем по циклограмме
       // Режим генератора синус/меандр
@@ -1243,8 +1245,6 @@ void goZepper() {
         Serial.println(" %");
 
         digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        //Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
-        //Ad9833.setMode(MD_AD9833::Cicle.ModeSig);
         if (Cicle.ModeSig == 1)
           Ad9833.setMode(MD_AD9833::MODE_SINE);
         if (Cicle.ModeSig == 2)
@@ -1254,16 +1254,18 @@ void goZepper() {
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
-        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
+        readDamp(power);                // Получить уровень мощности
 
         //lcd.setCursor(0, 0);
-        Serial.println("  F - ");
-        Serial.println((float)Cicle.Freq / 1000, 3);
+        Serial.print("F - ");
+        Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz  ");
         //lcd.setCursor(0, 1);
-        Serial.println("ЖдёM ");
-        Serial.println(Cicle.Exposite / 60);
-        Serial.println("-е минуты");
+        Serial.print("ЖдёM ");
+        printTimeSerial(Cicle.Exposite);
+        //Serial.println(Cicle.Exposite / 60);
+        //Serial.println("-е минуты");
+        // Выводим часы по времени экспозиции, опроса кнопок не реализовано (временно)
         testTFT(Cicle.Exposite * 1000);
         //tftDisplay();
 #ifndef TFT_ERR
@@ -1273,14 +1275,16 @@ void goZepper() {
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
           Serial.print("Пауза ");
-          Serial.print(Cicle.Pause);
-          Serial.println(" секунд");
+          //Serial.print(Cicle.Pause);
+          //Serial.println(" секунд");
+          printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+
 #ifndef TFT_ERR
           tftDisplay();
 #endif
-          //delay(Cicle.Pause * 1000);
+
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
         }
       } else {                                  // *** Режим меандра ***
@@ -1292,7 +1296,6 @@ void goZepper() {
         Serial.println(" %");
 
         digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
-        //Ad9833.setFrequency(Cicle.Freq, Cicle.ModeSig);
 
         if (Cicle.ModeSig == 1)
           Ad9833.setMode(MD_AD9833::MODE_SINE);
@@ -1303,28 +1306,32 @@ void goZepper() {
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
-        readDamp(map(power, 0, 100, 0, d_resis));    // Получить позицию энкодера
+        readDamp(power);    // Получить уровень мощности
 
         //lcd.setCursor(0, 0);
-        Serial.println("  F - ");
-        Serial.println((float)Cicle.Freq / 1000, 3);
+        Serial.print("  F - ");
+        Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz  ");
         //lcd.setCursor(0, 1);
         Serial.println("ЖдёM ");
-        Serial.println(Cicle.Exposite / 60);
-        Serial.println("-е минуты");
+        printTimeSerial(Cicle.Exposite);
+        //Serial.println(Cicle.Exposite / 60);
+        //Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
+
 #ifndef TFT_ERR
         tftDisplay();
 #endif
-        // delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
+        // delay(Cicle.Exposite * 1000);        // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
           Serial.print("Пауза ");
-          Serial.print(Cicle.Pause);
-          Serial.println(" секунд");
+          //Serial.print(Cicle.Pause);
+          //Serial.println(" секунд");
+          printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
+
 #ifndef TFT_ERR
           tftDisplay();
 #endif
@@ -1378,9 +1385,49 @@ void readDamp(int pw) {
   } else {
     Serial.println("STATIC");
     Serial.print("Мощность выхода = ");
-    Serial.println(currentEncoderPos);
+    Serial.print((float)map(pw,0,100,0,12000)/1000,2);
+    Serial.println(" Вольт");
   }
 #endif
+}
+
+void printTimeSerial(int t_sec) {
+  int tw = t_sec / 60;
+  if (tw >= 1) {
+    // Минуты
+    if (tw == 1) {
+      Serial.print(tw);
+      Serial.println(" минуту");
+    }
+    if (tw >= 2 && tw < 5) {
+      Serial.print(tw);
+      Serial.println(" минуты");
+    }
+    if (tw >= 5 && tw < 101) {
+      Serial.print(tw);
+      Serial.println(" минут");
+    }
+
+  } else {
+    // Секунды (до 600, здесь не потребуется, на будущее)
+    tw = t_sec;
+    if (tw == 1 || tw == 101 || tw == 201 || tw == 301 || tw == 401 || tw == 501 )
+    {
+      Serial.print(tw);
+      Serial.println(" секунда");
+    }
+    if ((tw >= 2 && tw < 5) || (tw >= 102 && tw < 105) || (tw >= 202 && tw < 205) || (tw >= 302 && tw < 305) || (tw >= 402 && tw < 405) || (tw >= 502 && tw < 505))
+    {
+      Serial.print(tw);
+      Serial.println(" секунды");
+    }
+    if ((tw >= 5 && tw < 101) || (tw >= 105 && tw < 201) || (tw >= 205 && tw < 301) || (tw >= 305 && tw < 401) || (tw >= 405 && tw < 501) || (tw >= 505 && tw < 601))
+    {
+      Serial.print(tw);
+      Serial.println(" секунд");
+    }
+  }
+  Serial.println();
 }
 
 
