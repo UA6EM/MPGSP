@@ -219,7 +219,7 @@ bool initial = 1;
 bool isduble = false;
 
 void testTFT(int times) {
-  int my_times = times/1000;
+  int my_times = times / 1000;
   if (!isduble) {
 
     isduble = true;
@@ -287,21 +287,21 @@ void testTFT(int times) {
 
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
-  tft.drawCentreString("                     ", 120, 260, 4); 
+  tft.drawCentreString("                     ", 120, 260, 4);
   while (millis() - ttt < times) {
     if (targetTime < millis()) {
       targetTime += 1000;
-      
+
       String str1 = "IN PROGRESS";
       yield();
-      tft.drawCentreString("                     ", 120, 260, 4); 
-      if(my_times <=100){
-      tft.drawNumber(--my_times, 110, 260, 4);
-      }else{
-      tft.drawNumber(--my_times, 100, 260, 4);      
+      tft.drawCentreString("                     ", 120, 260, 4);
+      if (my_times <= 100) {
+        tft.drawNumber(--my_times, 110, 260, 4);
+      } else {
+        tft.drawNumber(--my_times, 100, 260, 4);
       }
-     // tft.drawCentreString(str1, 120, 260, 3); 
-      
+      // tft.drawCentreString(str1, 120, 260, 3);
+
       ss++;              // Advance second
       if (ss == 60) {
         ss = 0;
@@ -349,7 +349,7 @@ void testTFT(int times) {
       tft.fillCircle(120, 121, 3, TFT_RED);
     }
   }
-      tft.drawCentreString("                     ", 120, 260, 4); 
+  tft.drawCentreString("                     ", 120, 260, 4);
 }
 
 static uint8_t conv2d(const char* p) {
@@ -758,32 +758,32 @@ String s1 = "";
 
 void tftDisplay() {
   s = "IN PROGRESS";
-  yield(); tft.drawCentreString(s, 120, 260, 3); 
+  yield(); tft.drawCentreString(s, 120, 260, 3);
 }
 
 /*
-void tftDisplay() {
+  void tftDisplay() {
   // 1-я строка
   s = "";
   if (!isWorkStarted) {
-#ifdef LCD_RUS
+  #ifdef LCD_RUS
     s += "Время-"; //Serial.println("Время-");
-#else
+  #else
     s += "Times-"; //Serial.println("Times-");
-#endif
+  #endif
     s += String(memTimers / 60000); //Serial.println(memTimers / 60000);
     if (memTimers / 60000 > 0) {
-#ifdef LCD_RUS
+  #ifdef LCD_RUS
       s += " мин. ";  //Serial.println(" мин. ");
-#else
+  #else
       s += " min. ";  //Serial.println(" min. ");
-#endif
+  #endif
     } else {
-#ifdef LCD_RUS
+  #ifdef LCD_RUS
       s += "0 мин. "; // Serial.println("0 мин. ");
-#else
+  #else
       s += "0 min. "; //  Serial.println("0 min. ");
-#endif
+  #endif
     }
   } else {
     s+="T-";
@@ -792,28 +792,28 @@ void tftDisplay() {
       // если больше минуты, то показываем минуты
       s+= String(memTimers / 1000 / 60);
       //Serial.println(memTimers / 1000 / 60);
-#ifdef LCD_RUS
+  #ifdef LCD_RUS
       s += "мин."; // Serial.println("мин.");
-#else
+  #else
       s += "min."; // Serial.println("min.");
-#endif
+  #endif
     } else {
       // если меньше минуты, то показываем секунды
       // Serial.println(memTimers / 1000);
        s+= String(memTimers / 1000);
-#ifdef LCD_RUS
+  #ifdef LCD_RUS
       s += "сек."; //Serial.println("сек.");
-#else
+  #else
       s += "sek."; //Serial.println("sek.");
-#endif
+  #endif
     }
     s += " U="; //Serial.println(" U=");
-#ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
+  #ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
     //itoa(numerInTable, buffers, 10);
     s += String(map(currentPotenciometrPercent, 1, 255, 1, 100)); //Serial.println(map(currentPotenciometrPercent, 1, 255, 1, 100));
-#else
+  #else
     s += String(map(currentPotenciometrPercent, 1, 127, 1, 100));  //Serial.println(map(currentPotenciometrPercent, 1, 127, 1, 100));
-#endif
+  #endif
     s += "%  "; //Serial.println("%  ");
   }
    yield(); tft.drawCentreString(s, 120, 260, 3);
@@ -834,7 +834,7 @@ void tftDisplay() {
   s1 += String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
   s1 += "ma"; //Serial.println("ma");
    yield(); tft.drawCentreString(s1, 120, 280, 3);
-}
+  }
 */
 
 int readSqlDB() {
@@ -1042,7 +1042,6 @@ void setup() {
   delay(100);
 
   // Читаем базу
-  // readSQLite3();
   readSqlDB();                        // Чтение базы в массивы с трёх возможных накопителей
 
   Btn1.init();                        // Инициализируем кнопку
@@ -1060,7 +1059,7 @@ void setup() {
   // после сброса устанавливаем значение по умолчанию
   setResistance(currentPotenciometrPercent);
 
-  // ждем секунду после настройки потенциометра
+  // ждем после настройки потенциометра
   delay(100);
 
 
@@ -1075,7 +1074,7 @@ void setup() {
 
   Data_ina219 = ina219.shuntCurrent() * 1000;
 
-#ifndef TFT_ERR
+#ifndef TFT_ERR     // отклюжчение вывода на дисплей в связи с ошибками в подпрограмме
   tftDisplay();
 #endif
 
@@ -1086,7 +1085,7 @@ void setup() {
   // testMCP41010();
 #endif
 
-  wiperValue = d_resis / 2;
+  wiperValue = d_resis / 2;        // половинная мощность
   //currentEncoderPos = wiperValue;
   Potentiometer.writeValue(wiperValue);  // Set MCP4131 or MCP4151 to mid position
 
@@ -1145,28 +1144,25 @@ void loop() {
   mill = millis();
   Btn1.run();
 
+  // ************** Выбор режима церрер ***************//
   if (Btn1.read() == sbClick) {
     Serial.println("Режим ZEPPER");
-#ifndef TFT_ERR
-    tftDisplay();
-#endif
+
 #ifdef LCD_RUS
     goZepper();
 #else
     goZepper();
 #endif
   }
+  // **************************************************//
 
+  // *************** Выбор рабочего режима ************//
   if (Btn1.read() == sbLong && !isWorkStarted) {
     SbLong = true;
     Serial.println("Режим STATIC");
   }
+  // **************************************************//
 
-  if (mill - prevUpdateDataIna > 1000 * 2) {
-    readAnalogAndSetFreqInLoop();
-    Data_ina219 = ina219.shuntCurrent() * 1000;
-    prevUpdateDataIna = millis();
-  }
 
 #ifndef TFT_ERR
   tftDisplay();
@@ -1185,8 +1181,15 @@ void loop() {
     timMillis = millis();
   }
 
+// *********** Рабочий режим ***************//
   if (isWorkStarted == 1) {
     memTimers = setTimerLCD(memTimers);
+    
+    if (mill - prevUpdateDataIna > 1000 * 2) {
+      readAnalogAndSetFreqInLoop();
+      Data_ina219 = ina219.shuntCurrent() * 1000;
+      prevUpdateDataIna = millis();
+    }
   }
 
 
