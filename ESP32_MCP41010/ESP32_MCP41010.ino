@@ -1164,7 +1164,7 @@ void loop() {
     oldmemTimers = memTimers;
     isWorkStarted = 1;
     digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-    
+
 #ifndef TFT_ERR
     tftDisplay();
 #endif
@@ -1206,7 +1206,9 @@ void loop() {
 void goZepper() {
   int sst = 0;       // возьмём нулевой элемент массива
   bool fgen = false; // синус / меандр = true (отслеживание смены режима)
-
+  
+  tft.drawCentreString("Zepper is ON", 120, 285, 3);
+  
   do {
 #ifdef DEBUG
     printStruct();
@@ -1243,7 +1245,7 @@ void goZepper() {
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
-        readDamp(power);                // Получить уровень мощности
+        readDamp(power);                          // Получить уровень мощности
 
         //lcd.setCursor(0, 0);
         Serial.print("F - ");
@@ -1252,20 +1254,17 @@ void goZepper() {
         //lcd.setCursor(0, 1);
         Serial.print("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
-        //Serial.println(Cicle.Exposite / 60);
-        //Serial.println("-е минуты");
+
         // Выводим часы по времени экспозиции, опроса кнопок не реализовано (временно)
         testTFT(Cicle.Exposite * 1000);
-        //tftDisplay();
+
 #ifndef TFT_ERR
         tftDisplay();
 #endif
-        //delay(Cicle.Exposite * 1000);           // Выдержка экспозиции частоты
+        //delay(Cicle.Exposite * 1000);         // Выдержка экспозиции частоты
 
         if (Cicle.Pause != 0) {                 // Отработаем паузу, если она есть
           Serial.print("Пауза ");
-          //Serial.print(Cicle.Pause);
-          //Serial.println(" секунд");
           printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           testTFT(Cicle.Pause * 1000);
@@ -1298,14 +1297,13 @@ void goZepper() {
         readDamp(power);    // Получить уровень мощности
 
         //lcd.setCursor(0, 0);
-        Serial.print("  F - ");
+        Serial.print("F - ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz  ");
+
         //lcd.setCursor(0, 1);
         Serial.println("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
-        //Serial.println(Cicle.Exposite / 60);
-        //Serial.println("-е минуты");
         testTFT(Cicle.Exposite * 1000);
 
 #ifndef TFT_ERR
@@ -1344,6 +1342,11 @@ void goZepper() {
   setStructure(sst);
 
   isWorkStarted = false; // рабочий режим окончен
+  
+  // Почистим строку экрана
+  yield();
+  tft.drawCentreString("                     ", 120, 260, 4);
+  tft.drawCentreString("ZEPPER IS OFF", 120, 285, 4);
 }
 
 
@@ -1369,14 +1372,13 @@ void readDamp(int pw) {
   Serial.print("Выход сигнала на разъём ");
   if (digitalRead(PIN_RELE)) {
     Serial.println("ZEPPER");
-    Serial.print("U = ");
-    Serial.println(pw);
   } else {
-    Serial.println("STATIC");
-    Serial.print("Мощность выхода = ");
-    Serial.print((float)map(pw,0,100,0,24000)/1000,2);
-    Serial.println(" Вольт");
+    Serial.println("STATICS");
   }
+  Serial.print("Мощность выхода = ");
+  Serial.print((float)map(pw, 0, 100, 0, 24000) / 1000, 2);
+  Serial.println(" Вольт");
+
 #endif
 }
 
