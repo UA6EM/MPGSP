@@ -122,7 +122,7 @@ unsigned long oneMinute = MINUTES(1);
 unsigned long timers = MINUTES(5);  // время таймера 15, 30, 45 или 60 минут
 unsigned long memTimers = 0;        //здесь будем хранить установленное время таймера
 unsigned long oldmemTimers = 0;
-byte isWorkStarted = 0;  // флаг запуска таймера
+bool isWorkStarted = 0;  // флаг запуска таймера
 
 unsigned long timMillis = 0;
 unsigned long oldMillis = 0;
