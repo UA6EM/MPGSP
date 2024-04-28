@@ -149,16 +149,6 @@ bool SbLong = false;
 
 int16_t RE_Count = 0;
 
-#ifndef LCD_RUS
-#define I2C_ADDR 0x3F //0x27
-#include <LiquidCrystal_I2C.h>
-LiquidCrystal_I2C lcd(I2C_ADDR, 20, 4);
-#else
-#define I2C_ADDR 0x3F
-#include <LCD_1602_RUS.h>
-LCD_1602_RUS lcd(I2C_ADDR, 16, 2);
-#endif
-
 #include <Wire.h>
 #include <SPI.h>
 
@@ -1174,6 +1164,7 @@ void loop() {
     oldmemTimers = memTimers;
     isWorkStarted = 1;
     digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+    
 #ifndef TFT_ERR
     tftDisplay();
 #endif
@@ -1206,8 +1197,6 @@ void loop() {
     currentEncoderPos = newEncoderPos;
     readDamp(currentEncoderPos);
   }
-  // readAnalogAndSetFreqInLoop();
-
 } // *************** E N D  L O O P ****************
 
 
@@ -1385,7 +1374,7 @@ void readDamp(int pw) {
   } else {
     Serial.println("STATIC");
     Serial.print("Мощность выхода = ");
-    Serial.print((float)map(pw,0,100,0,12000)/1000,2);
+    Serial.print((float)map(pw,0,100,0,24000)/1000,2);
     Serial.println(" Вольт");
   }
 #endif
