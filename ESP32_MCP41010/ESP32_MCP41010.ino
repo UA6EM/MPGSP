@@ -377,12 +377,12 @@ String queryGen = "SELECT * FROM modesgen WHERE id = ";
 String querySig = "SELECT * FROM modessig WHERE id = ";
 
 #ifdef SD_CARD
-const char* DBName = "/sd/standard.db";
+const char* DBName = "/sd/standard1.db";
 #else
 #ifdef SD_CARD_MMC
-const char* DBName = "/sdcard/standard.db";
+const char* DBName = "/sdcard/standard1.db";
 #else
-const char* DBName = "/spiffs/standard.db";
+const char* DBName = "/spiffs/standard1.db";
 //const char* DBName = "/spiffs/zepper.db";
 //const char* DBName = "/spiffs/std.db";
 #endif
@@ -751,12 +751,13 @@ void readAnalogAndSetFreqInLoop() {
 String s = "IN PROGRESS";
 String s1 = "";
 
+/*
 void tftDisplay() {
   s = "IN PROGRESS";
-  yield(); tft.drawCentreString(s, 120, 260, 3);
+  yield(); tft.drawCentreString(s, 120, 260, 2);
 }
-
-/*
+*/
+/* */
   void tftDisplay() {
   // 1-я строка
   s = "";
@@ -811,7 +812,7 @@ void tftDisplay() {
   #endif
     s += "%  "; //Serial.println("%  ");
   }
-   yield(); tft.drawCentreString(s, 120, 260, 3);
+   yield(); tft.drawCentreString(s, 120, 260, 2);
 
   // 2 строка
   // lcd.setCursor(0, 1);
@@ -828,9 +829,9 @@ void tftDisplay() {
   //lcd.setCursor(11, 1);
   s1 += String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
   s1 += "ma"; //Serial.println("ma");
-   yield(); tft.drawCentreString(s1, 120, 280, 3);
+   yield(); tft.drawCentreString(s1, 120, 280, 2);
   }
-*/
+/* */
 
 int readSqlDB() {
 #ifdef SD_CARD_MMC
@@ -1346,6 +1347,7 @@ void goZepper() {
   yield();
   tft.drawCentreString("                     ", 120, 260, 4);
   tft.drawCentreString("Zepper is OFF", 120, 285, 4);
+  delay(60000);
 }
 // ******** Конец процедуры ZEPPER ********* //
 
@@ -1426,6 +1428,40 @@ void printModeSigToSerial(int m_sig) {
   Serial.print("Режим генератора - ");
   if (m_sig == 1) Serial.println("Синус");
   if (m_sig == 2) Serial.println("Меандр");
+}
+
+
+/*------- RUS fonts from UTF-8 to Windows-1251 -----*/
+String utf8rus(String source)
+{
+ int i,k;
+ String target;
+ unsigned char n;
+ char m[2] = { '0', '\0' };
+
+ k = source.length(); i = 0;
+
+ while (i < k) {
+ n = source[i]; i++;
+
+    if (n >= 127) {
+      switch (n) {
+        case 208: {
+          n = source[i]; i++;
+          if (n == 129) { n = 192; break; } // перекодируем букву Ё
+          break;
+        }
+        case 209: {
+          n = source[i]; i++;
+          if (n == 145) { n = 193; break; } // перекодируем букву ё
+          break;
+        }
+      }
+    }
+
+ m[0] = n; target = target + String(m);
+ }
+return target;
 }
 
 
