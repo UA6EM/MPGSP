@@ -39,7 +39,7 @@
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
-#define DEBUG                          // Замаркировать если не нужны тесты
+#define DEBUG                            // Замаркировать если не нужны тесты
 //#define LCD_RUS                          // Замаркировать, если скетч для пользователя CIPARS
 #define SECONDS(x) ((x)*1000UL)
 #define MINUTES(x) (SECONDS(x) * 60UL)
@@ -208,6 +208,8 @@ static int old_mm = 0;
 bool initial = 1;
 bool isduble = false;
 
+
+/* ********* Ч А С И К И ********* */
 void testTFT(int times) {
   int my_times = times / 1000;
   if (!isduble) {
@@ -285,15 +287,15 @@ void testTFT(int times) {
 
       String str1 = "IN PROGRESS";
       yield();
-      tft.drawCentreString("                     ", 120, 260, 4);
+      tft.drawCentreString("                     ", 120, 260, 2);
       if (my_times <= 100) {
         tft.drawNumber(--my_times, 110, 260, 4);
         yield();
-        tft.drawString("Zepper is ON", 120, 285, 3);
+        tft.drawString("Zepper is ON", 120, 285, 2);
       } else {
         tft.drawNumber(--my_times, 100, 260, 4);
         yield();
-        tft.drawString("Zepper is ON", 120, 285, 3);
+        tft.drawString("Zepper is ON", 120, 285, 2);
       }
 
       ss++;              // Advance second
@@ -343,7 +345,7 @@ void testTFT(int times) {
       tft.fillCircle(120, 121, 3, TFT_RED);
     }
   }
-  tft.drawCentreString("                     ", 120, 260, 4);
+  tft.drawCentreString("                     ", 120, 260, 2);
 }
 
 static uint8_t conv2d(const char* p) {
@@ -377,12 +379,12 @@ String queryGen = "SELECT * FROM modesgen WHERE id = ";
 String querySig = "SELECT * FROM modessig WHERE id = ";
 
 #ifdef SD_CARD
-const char* DBName = "/sd/standard1.db";
+const char* DBName = "/sd/standard.db";
 #else
 #ifdef SD_CARD_MMC
-const char* DBName = "/sdcard/standard1.db";
+const char* DBName = "/sdcard/standard.db";
 #else
-const char* DBName = "/spiffs/standard1.db";
+const char* DBName = "/spiffs/standard.db";
 //const char* DBName = "/spiffs/zepper.db";
 //const char* DBName = "/spiffs/std.db";
 #endif
@@ -640,16 +642,16 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     isWorkStarted = 0;
     //lcd.setCursor(0, 1);
 #ifdef LCD_RUS
-    tft.drawCentreString("СТОП", 120, 260, 4);   //Serial.println("    СТОП!     ");
+    tft.drawCentreString("СТОП", 120, 260, 2);   //Serial.println("    СТОП!     ");
 #else
-    tft.drawCentreString("STOP", 120, 260, 4);   //Serial.println("    STOP!     ");
+    tft.drawCentreString("STOP", 120, 260, 2);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
     // lcd.setCursor(0, 1);
-    tft.drawCentreString("      ", 120, 260, 4);  //Serial.println("              ");
+    tft.drawCentreString("      ", 120, 260, 2);  //Serial.println("              ");
   }
   return timlcd;
 }
