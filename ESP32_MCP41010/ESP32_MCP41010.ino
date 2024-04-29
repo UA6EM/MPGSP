@@ -1,5 +1,4 @@
 // Генератор для катушки Мишина на основе DDS AD9833 для ESP32 экран LCD
-
 // Partition Scheme: NO OTA (2MB APP, 2MB SPIFFS)
 // При компиляции, в настройках IDE оключить все уведомления
 // иначе вылетит по ошибке на sqlite3
@@ -253,6 +252,7 @@ void testTFT(int times) {
     // Draw text at position 120,260 using fonts 4
     // Only font numbers 2,4,6,7 are valid. Font 6 only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : . - a p m
     // Font 7 is a 7 segment font and only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : .
+    yield();
     tft.drawCentreString("Time flies", 120, 260, 4);
   }
 
@@ -279,6 +279,7 @@ void testTFT(int times) {
 
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
+  yield();
   tft.drawCentreString("                     ", 120, 260, 4);
 
   while (millis() - ttt < times) {
@@ -287,15 +288,19 @@ void testTFT(int times) {
 
       String str1 = "IN PROGRESS";
       yield();
-      tft.drawCentreString("                     ", 120, 260, 2);
+      tft.drawCentreString("                     ", 120, 250, 4);
       if (my_times <= 100) {
-        tft.drawNumber(--my_times, 110, 260, 4);
+        tft.drawNumber(--my_times, 110, 250, 4);
         yield();
-        tft.drawString("Zepper is ON", 120, 285, 2);
+        tft.drawCentreString("                     ", 120, 285, 4);
+        yield();
+        tft.drawCentreString("Zepper is ON", 120, 285, 2);
       } else {
-        tft.drawNumber(--my_times, 100, 260, 4);
+        tft.drawNumber(--my_times, 100, 250, 4);
         yield();
-        tft.drawString("Zepper is ON", 120, 285, 2);
+        tft.drawCentreString("                     ", 120, 285, 4);
+        yield();
+        tft.drawCentreString("Zepper is ON", 120, 285, 2);
       }
 
       ss++;              // Advance second
@@ -345,7 +350,10 @@ void testTFT(int times) {
       tft.fillCircle(120, 121, 3, TFT_RED);
     }
   }
-  tft.drawCentreString("                     ", 120, 260, 2);
+  yield();
+  tft.drawCentreString("                     ", 120, 250, 4);
+  yield();
+  tft.drawCentreString("                     ", 120, 284, 4);
 }
 
 static uint8_t conv2d(const char* p) {
@@ -379,12 +387,12 @@ String queryGen = "SELECT * FROM modesgen WHERE id = ";
 String querySig = "SELECT * FROM modessig WHERE id = ";
 
 #ifdef SD_CARD
-const char* DBName = "/sd/standard.db";
+const char* DBName = "/sd/standard1.db";
 #else
 #ifdef SD_CARD_MMC
-const char* DBName = "/sdcard/standard.db";
+const char* DBName = "/sdcard/standard1.db";
 #else
-const char* DBName = "/spiffs/standard.db";
+const char* DBName = "/spiffs/standard1.db";
 //const char* DBName = "/spiffs/zepper.db";
 //const char* DBName = "/spiffs/std.db";
 #endif
@@ -642,8 +650,10 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     isWorkStarted = 0;
     //lcd.setCursor(0, 1);
 #ifdef LCD_RUS
+    yield();
     tft.drawCentreString("СТОП", 120, 260, 2);   //Serial.println("    СТОП!     ");
 #else
+    yield();
     tft.drawCentreString("STOP", 120, 260, 2);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
@@ -651,7 +661,8 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     delay(3000);
     stop_Buzzer();
     // lcd.setCursor(0, 1);
-    tft.drawCentreString("      ", 120, 260, 2);  //Serial.println("              ");
+    yield();
+    tft.drawCentreString("       ", 120, 260, 2);  //Serial.println("              ");
   }
   return timlcd;
 }
@@ -753,87 +764,83 @@ void readAnalogAndSetFreqInLoop() {
 String s = "IN PROGRESS";
 String s1 = "";
 
-/*
+
 void tftDisplay() {
-  s = "IN PROGRESS";
-  yield(); tft.drawCentreString(s, 120, 260, 2);
-}
-*/
-/* */
-  void tftDisplay() {
   // 1-я строка
   s = "";
   if (!isWorkStarted) {
-  #ifdef LCD_RUS
+#ifdef LCD_RUS
     s += "Время-"; //Serial.println("Время-");
-  #else
+#else
     s += "Times-"; //Serial.println("Times-");
-  #endif
+#endif
     s += String(memTimers / 60000); //Serial.println(memTimers / 60000);
     if (memTimers / 60000 > 0) {
-  #ifdef LCD_RUS
+#ifdef LCD_RUS
       s += " мин. ";  //Serial.println(" мин. ");
-  #else
+#else
       s += " min. ";  //Serial.println(" min. ");
-  #endif
+#endif
     } else {
-  #ifdef LCD_RUS
+#ifdef LCD_RUS
       s += "0 мин. "; // Serial.println("0 мин. ");
-  #else
+#else
       s += "0 min. "; //  Serial.println("0 min. ");
-  #endif
+#endif
     }
   } else {
-    s+="T-";
+    s += "T-";
     //Serial.print("T-");
     if (memTimers > 60000) {
       // если больше минуты, то показываем минуты
-      s+= String(memTimers / 1000 / 60);
+      s += String(memTimers / 1000 / 60);
       //Serial.println(memTimers / 1000 / 60);
-  #ifdef LCD_RUS
+#ifdef LCD_RUS
       s += "мин."; // Serial.println("мин.");
-  #else
+#else
       s += "min."; // Serial.println("min.");
-  #endif
+#endif
     } else {
       // если меньше минуты, то показываем секунды
       // Serial.println(memTimers / 1000);
-       s+= String(memTimers / 1000);
-  #ifdef LCD_RUS
+      s += String(memTimers / 1000);
+#ifdef LCD_RUS
       s += "сек."; //Serial.println("сек.");
-  #else
+#else
       s += "sek."; //Serial.println("sek.");
-  #endif
+#endif
     }
     s += " U="; //Serial.println(" U=");
-  #ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
+#ifdef MCP41010MOD  // можно замапить в реальный % выходного сигнала
     //itoa(numerInTable, buffers, 10);
     s += String(map(currentPotenciometrPercent, 1, 255, 1, 100)); //Serial.println(map(currentPotenciometrPercent, 1, 255, 1, 100));
-  #else
+#else
     s += String(map(currentPotenciometrPercent, 1, 127, 1, 100));  //Serial.println(map(currentPotenciometrPercent, 1, 127, 1, 100));
-  #endif
+#endif
     s += "%  "; //Serial.println("%  ");
   }
-   yield(); tft.drawCentreString(s, 120, 260, 2);
+  yield();
+  tft.drawCentreString(s, 120, 260, 2);
 
-  // 2 строка
-  // lcd.setCursor(0, 1);
+  // 2 строка Частота
+  s1 = "";
   s1 += "F="; //  Serial.println("F=");
-  //lcd.setCursor(3, 1);                   //1 строка 7 позиция
   float freq_tic = ifreq;
   float kHz = freq_tic / 1000;
-  s1 += String(kHz); //Serial.println(kHz, 0);
-  s1 += "kHz  "; //(Serial.println("kHz");
+  s1 += String(kHz);              //Serial.println(kHz, 0);
+  s1 += "kHz  ";                  //(Serial.println("kHz");
 
-  // 2 строка
-  //lcd.setCursor(9, 1);
-  s1 += "I="; //Serial.println("I=");
+  // 2 строка Ток
+  s1 += "I=";                     //Serial.println("I=");
   //lcd.setCursor(11, 1);
-  s1 += String(Data_ina219 * 2); //Serial.println(Data_ina219 * 2);
-  s1 += "ma"; //Serial.println("ma");
-   yield(); tft.drawCentreString(s1, 120, 280, 2);
-  }
-/* */
+  s1 += String(Data_ina219 * 2);  //Serial.println(Data_ina219 * 2);
+  s1 += "ma";                     //Serial.println("ma");
+  yield();
+  tft.drawCentreString("                      ", 120, 280, 2);
+  yield();
+  tft.drawCentreString(s1, 120, 280, 2);
+}
+
 
 int readSqlDB() {
 #ifdef SD_CARD_MMC
@@ -1162,11 +1169,6 @@ void loop() {
   }
   // **************************************************//
 
-
-#ifndef TFT_ERR
-  tftDisplay();
-#endif
-
   if ( SbLong) {
     SbLong = false;
     oldmemTimers = memTimers;
@@ -1189,6 +1191,9 @@ void loop() {
       readAnalogAndSetFreqInLoop();
       Data_ina219 = ina219.shuntCurrent() * 1000;
       prevUpdateDataIna = millis();
+      #ifndef TFT_ERR
+  tftDisplay();
+#endif
     }
   }
 
@@ -1204,6 +1209,9 @@ void loop() {
     }
     currentEncoderPos = newEncoderPos;
     readDamp(map(wiperValue, 0, 255, 0, 100));  // Значение с потенциометра в % и далее преобразовать в Вольты
+ #ifndef TFT_ERR
+  tftDisplay();
+#endif
   }
 } // *************** E N D  L O O P ****************
 
@@ -1348,6 +1356,7 @@ void goZepper() {
   // Почистим строку экрана
   yield();
   tft.drawCentreString("                     ", 120, 260, 4);
+  yield();
   tft.drawCentreString("Zepper is OFF", 120, 285, 4);
   delay(60000);
 }
@@ -1436,34 +1445,40 @@ void printModeSigToSerial(int m_sig) {
 /*------- RUS fonts from UTF-8 to Windows-1251 -----*/
 String utf8rus(String source)
 {
- int i,k;
- String target;
- unsigned char n;
- char m[2] = { '0', '\0' };
+  int i, k;
+  String target;
+  unsigned char n;
+  char m[2] = { '0', '\0' };
 
- k = source.length(); i = 0;
+  k = source.length(); i = 0;
 
- while (i < k) {
- n = source[i]; i++;
+  while (i < k) {
+    n = source[i]; i++;
 
     if (n >= 127) {
       switch (n) {
         case 208: {
-          n = source[i]; i++;
-          if (n == 129) { n = 192; break; } // перекодируем букву Ё
-          break;
-        }
+            n = source[i]; i++;
+            if (n == 129) {
+              n = 192;  // перекодируем букву Ё
+              break;
+            }
+            break;
+          }
         case 209: {
-          n = source[i]; i++;
-          if (n == 145) { n = 193; break; } // перекодируем букву ё
-          break;
-        }
+            n = source[i]; i++;
+            if (n == 145) {
+              n = 193;  // перекодируем букву ё
+              break;
+            }
+            break;
+          }
       }
     }
 
- m[0] = n; target = target + String(m);
- }
-return target;
+    m[0] = n; target = target + String(m);
+  }
+  return target;
 }
 
 
