@@ -252,8 +252,8 @@ void testTFT(int times) {
     // Draw text at position 120,260 using fonts 4
     // Only font numbers 2,4,6,7 are valid. Font 6 only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : . - a p m
     // Font 7 is a 7 segment font and only contains characters [space] 0 1 2 3 4 5 6 7 8 9 : .
-    yield();
-    tft.drawCentreString("Time flies", 120, 260, 4);
+    //yield();
+    //tft.drawCentreString("Time flies", 120, 275, 4);
   }
 
   // Draw expositions dots
@@ -279,28 +279,27 @@ void testTFT(int times) {
 
   targetTime = millis() + 1000;
   unsigned long ttt = millis();
-  yield();
-  tft.drawCentreString("                     ", 120, 260, 4);
 
   while (millis() - ttt < times) {
     if (targetTime < millis()) {
       targetTime += 1000;
 
-      String str1 = "IN PROGRESS";
       yield();
       tft.drawCentreString("                     ", 120, 250, 4);
       if (my_times <= 100) {
+        tft.drawCentreString("                     ", 120, 250, 4);
         tft.drawNumber(--my_times, 110, 250, 4);
         yield();
-        tft.drawCentreString("                     ", 120, 285, 4);
+        tft.drawCentreString("                     ", 120, 275, 2);
         yield();
-        tft.drawCentreString("Zepper is ON", 120, 285, 2);
+        tft.drawCentreString("Zepper is ON", 120, 275, 2);
       } else {
+        tft.drawCentreString("                     ", 120, 250, 4);
         tft.drawNumber(--my_times, 100, 250, 4);
         yield();
-        tft.drawCentreString("                     ", 120, 285, 4);
+        tft.drawCentreString("                     ", 120, 275, 2);
         yield();
-        tft.drawCentreString("Zepper is ON", 120, 285, 2);
+        tft.drawCentreString("Zepper is ON", 120, 275, 2);
       }
 
       ss++;              // Advance second
@@ -353,7 +352,7 @@ void testTFT(int times) {
   yield();
   tft.drawCentreString("                     ", 120, 250, 4);
   yield();
-  tft.drawCentreString("                     ", 120, 284, 4);
+  tft.drawCentreString("                     ", 120, 275, 2);
 }
 
 static uint8_t conv2d(const char* p) {
@@ -651,10 +650,10 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     //lcd.setCursor(0, 1);
 #ifdef LCD_RUS
     yield();
-    tft.drawCentreString("СТОП", 120, 260, 2);   //Serial.println("    СТОП!     ");
+    tft.drawCentreString("СТОП", 120, 275, 2);   //Serial.println("    СТОП!     ");
 #else
     yield();
-    tft.drawCentreString("STOP", 120, 260, 2);   //Serial.println("    STOP!     ");
+    tft.drawCentreString("STOP", 120, 275, 2);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
     start_Buzzer();
@@ -662,7 +661,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     stop_Buzzer();
     // lcd.setCursor(0, 1);
     yield();
-    tft.drawCentreString("       ", 120, 260, 2);  //Serial.println("              ");
+    tft.drawCentreString("            ", 120, 275, 2);  //Serial.println("              ");
   }
   return timlcd;
 }
@@ -761,9 +760,8 @@ void readAnalogAndSetFreqInLoop() {
 
 
 // *** Вывод на дисплей ***
-String s = "IN PROGRESS";
+String s = "";
 String s1 = "";
-
 
 void tftDisplay() {
   // 1-я строка
@@ -819,8 +817,11 @@ void tftDisplay() {
 #endif
     s += "%  "; //Serial.println("%  ");
   }
+  
   yield();
-  tft.drawCentreString(s, 120, 260, 2);
+  tft.drawCentreString("                       ", 120, 275, 2);
+  yield();
+  tft.drawCentreString(s, 120, 275, 2);
 
   // 2 строка Частота
   s1 = "";
@@ -828,17 +829,17 @@ void tftDisplay() {
   float freq_tic = ifreq;
   float kHz = freq_tic / 1000;
   s1 += String(kHz);              //Serial.println(kHz, 0);
-  s1 += "kHz  ";                  //(Serial.println("kHz");
+  s1 += " kHz  ";                  //(Serial.println("kHz");
 
   // 2 строка Ток
-  s1 += "I=";                     //Serial.println("I=");
+  s1 += "I = ";                     //Serial.println("I=");
   //lcd.setCursor(11, 1);
   s1 += String(Data_ina219 * 2);  //Serial.println(Data_ina219 * 2);
-  s1 += "ma";                     //Serial.println("ma");
+  s1 += " ma";                     //Serial.println("ma");
   yield();
-  tft.drawCentreString("                      ", 120, 280, 2);
+  tft.drawCentreString("                      ", 120, 293, 2);
   yield();
-  tft.drawCentreString(s1, 120, 280, 2);
+  tft.drawCentreString(s1, 120, 293, 2);
 }
 
 
@@ -1240,8 +1241,8 @@ void goZepper() {
         Serial.println("Конец паузы 10 секунд");
         stop_Buzzer();
       }
-
-      // tft.drawCentreString("Zepper is ON", 120, 285, 3); // Очистка экрана стирает вывод
+       yield();
+       tft.drawCentreString("Zepper is ON", 120, 275, 2); // Очистка экрана стирает вывод
 
       if (!fgen) {                              // *** Выход генератора - STATIC ***
         digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
@@ -1355,9 +1356,9 @@ void goZepper() {
 
   // Почистим строку экрана
   yield();
-  tft.drawCentreString("                     ", 120, 260, 4);
+  tft.drawCentreString("                     ", 120, 275, 2);
   yield();
-  tft.drawCentreString("Zepper is OFF", 120, 285, 4);
+  tft.drawCentreString("Zepper is OFF", 120, 275, 2);
   delay(60000);
 }
 // ******** Конец процедуры ZEPPER ********* //
