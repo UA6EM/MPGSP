@@ -660,6 +660,7 @@ unsigned long setTimerLCD(unsigned long timlcd) {
     tft.drawCentreString("STOP", 120, 275, 2);   //Serial.println("    STOP!     ");
 #endif
     digitalWrite(ON_OFF_CASCADE_PIN, LOW);
+    si5351.output_enable(SI5351_CLK0,0);
     start_Buzzer();
     delay(3000);
     stop_Buzzer();
@@ -1033,7 +1034,7 @@ void setup() {
   digitalWrite(PIN_ZUM, LOW);
   digitalWrite(PIN_RELE, LOW);
   digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
-
+  si5351.output_enable(SI5351_CLK0,1);
   // Энкодер
   pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLUP);
   pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLUP);
@@ -1188,6 +1189,7 @@ void loop() {
     oldmemTimers = memTimers;
     isWorkStarted = 1;
     digitalWrite(ON_OFF_CASCADE_PIN, HIGH);
+    si5351.output_enable(SI5351_CLK0,1);
 
 #ifndef TFT_ERR
     tftDisplay();
@@ -1272,6 +1274,8 @@ void goZepper() {
           Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
 
         Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
+        si5351.output_enable(SI5351_CLK0,1);
+        setSI5351Freq(Cicle.Freq);
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
@@ -1296,6 +1300,7 @@ void goZepper() {
           Serial.print("Пауза ");
           printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
+          si5351.output_enable(SI5351_CLK0,0);
           testTFT(Cicle.Pause * 1000);
 
 #ifndef TFT_ERR
@@ -1303,6 +1308,7 @@ void goZepper() {
 #endif
 
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+          si5351.output_enable(SI5351_CLK0,1);
         }
       } else {                                  // *** Режим меандра ***
         digitalWrite(PIN_RELE, HIGH);            // Выход реле (NO)
@@ -1320,6 +1326,8 @@ void goZepper() {
           Ad9833.setMode(MD_AD9833::MODE_SQUARE1);
 
         Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
+        si5351.output_enable(SI5351_CLK0,1);
+        setSI5351Freq(Cicle.Freq);
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
@@ -1341,6 +1349,7 @@ void goZepper() {
           Serial.print("Пауза ");
           printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
+          si5351.output_enable(SI5351_CLK0,0);
           testTFT(Cicle.Pause * 1000);
 
 #ifndef TFT_ERR
@@ -1348,6 +1357,7 @@ void goZepper() {
 #endif
           // delay(Cicle.Pause * 1000);
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
+          si5351.output_enable(SI5351_CLK0,1);
         }
       }
       sst += 1;
@@ -1359,6 +1369,7 @@ void goZepper() {
   printStruct();
   Serial.println("Сеанс окончен");
   digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода OFF
+  si5351.output_enable(SI5351_CLK0,0);
   digitalWrite(PIN_RELE, LOW);            // Выход реле (NC)
   sst = 0;
 
