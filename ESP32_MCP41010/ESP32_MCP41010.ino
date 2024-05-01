@@ -1483,23 +1483,23 @@ String utf8rus(String source)
 }
 
 
-//  G0 - TFT CS
-//  G1 - TX
-//  G2 - <-> TFT_CS
-//  G3 - RX
-//  g4 - <-> TFT_DC
-//  G5 - MCP41x1_CS   5 <-> 2_MCP_CS       // Define chipselect pin for MCP41010
+//  G0 - TFT_CS         0 <-> TFT_CS                // Define chipselect pin for TFT Display
+//  G1 - TX UART        1 <-> (Serial)
+//  G2 - TFT_RST        2 <-> TFT_RST
+//  G3 - RX UART        3 <-> (Serial)
+//  g4 - TFT_DC         4 <-> TFT_DC
+//  G5 - SD_CS          5 <-> SD_CS                  // Define chipselect pin for SD Card
 //  G6 -
 //  G7 -
 //  G8 -
 //  G9 -
 //  G10 -
 //  G11 -
-//  G12 - AD9833_MISO 12  X  NOT CONNECTED
-//  G13 - AD9833_MOSI 13 <-> AD9833_SDATA  <-> TFT_MOSI
-//  G14 - AD9833_SCK  14 <-> AD9833_SCLK   <-> TFT_SCK
-//  G15 - AD9833_CS   15 <-> AD9833_FSYNC
-//  G16 - - - - - - - - - - - - - - - - -  <-> TFT_RST
+//  G12 - AD9833_MISO  12  X  NOT CONNECTED
+//  G13 - AD9833_MOSI  13 <-> AD9833_SDATA  <-> TFT_MOSI
+//  G14 - AD9833_SCK   14 <-> AD9833_SCLK   <-> TFT_SCK
+//  G15 - AD9833_CS    15 <-> AD9833_FSYNC
+//  G16 - MCP41x1_CS   16 <-> MCP41x1_CS
 
 //  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
 //  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
@@ -1509,8 +1509,8 @@ String utf8rus(String source)
 //  G22 - SCK // LCD, INA219
 //  G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
 //  G24 -
-//  G25 - ROTARY_ENCODER_BUTTON_PIN 25 <-> ENC_SW
-//  G26 - ROTARY_ENCODER_A_PIN      26 <-> ENC_CLK   //PIN_RELE    26 <-> RELAY
+//  G25 - PIN_RELE                  25 <-> RELAY      // PIN_RELE  
+//  G26 - ROTARY_ENCODER_A_PIN      26 <-> ENC_CLK     
 //  G27 - ROTARY_ENCODER_B_PIN      27 <-> ENC_DT
 //  G28 -
 //  G29 -
@@ -1519,7 +1519,49 @@ String utf8rus(String source)
 //  G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
 //  G33 - PIN_ZUM                   33 <-> BUZZER
 //  G34 -
-//  G35 -
+//  G35 - ROTARY_ENCODER_BUTTON_PIN 35 <-> ENC_SW //  PULL_UP +3.3 R 4K7
 //  G36 -
 
 //  G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
+
+/*
+ * 1  3.3V 
+ * 2  NE  
+ * 3
+ * 4  VN   G39 - CORRECT_PIN A3 (ADC3) (VN)39 <-> SENS_IMPLOSION
+ * 5
+ * 6   G35 - ROTARY_ENCODER_BUTTON_PIN 35 <-> ENC_SW //  PULL_UP +3.3 R 4K7
+ * 7   G32 - ON_OFF_CASCADE_PIN        32 <-> LT1206_SHUTDOWN
+ * 8   G33 - PIN_ZUM                   33 <-> BUZZER
+ * 9   G25 - PIN_RELE                  25 <-> RELAY      // PIN_RELE  
+ * 10  G26 - ROTARY_ENCODER_A_PIN      26 <-> ENC_CLK     
+ * 11  G27 - ROTARY_ENCODER_B_PIN      27 <-> ENC_DT
+ * 12  G14 - AD9833_SCK   14 <-> AD9833_SCLK   <-> TFT_SCK
+ * 13  G12 - AD9833_MISO  12  X  NOT CONNECTED
+ * 14  GND
+ * 15  G13 - AD9833_MOSI  13 <-> AD9833_SDATA  <-> TFT_MOSI
+ * 16  D2
+ * 17  D3
+ * 18  CMD
+ * 19  +5V
+ * 20  GND
+ * 21  G23 - MCP41x1_MOSI 23 <-> MCP41010_SDATA          // Define MOSI pin for MCP4131 or MCP41010
+ * 22  G22 - SCK // INA219 (SCL)
+ * 23  TX - UART (Serial)
+ * 24  RX - UART (Serial)
+ * 25  G21 - SDA // INA219 (SDA)
+ * 26  GND
+ * 27  G19 - MCP41x1_MISO 19  X  NOT CONNECTED          // Define MISO pin for MCP4131 or MCP41010 
+ * 28  G18 - MCP41x1_SCK  18 <-> MCP41010_SCLK          // Define SCK pin for MCP41010
+ * 29  G5  - SD_CS         5 <-> SD_CS                  // Define chipselect pin for SD Card
+ * 30  G17 - MCP41x1_ALC  17 <-> MCP41010_ALC           // Define chipselect pin for MCP41010 for ALC
+ * 31  G16 - MCP41x1_CS   16 <-> MCP41x1_CS
+ * 32  G4 - TFT_DC         4 <-> TFT_DC
+ * 33  G0 - TFT_CS         0 <-> TFT_CS                // Define chipselect pin for TFT Display
+ * 34  G2 - TFT_RST        2 <-> TFT_RST
+ * 35  G15 - AD9833_CS    15 <-> AD9833_FSYNC
+ * 36  D1
+ * 37  D0
+ * 38  SCK
+ * 
+ */
