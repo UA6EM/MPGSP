@@ -757,6 +757,7 @@ void readAnalogAndSetFreqInLoop() {
       delay(10);
     }
     ifreq = freqWithMaxI;
+    freqDisp = ifreq;
     //Ad9833.setFrequency((float)ifreq, AD9833_SINE);
     Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)ifreq);
     prevReadAnalogTime = millis();
