@@ -139,6 +139,7 @@ long FREQ_MIN = 200000;                // 200kHz
 long FREQ_MAX = 500000;                // 500kHz
 long ifreq = FREQ_MIN;
 long freq = FREQ_MIN;
+long freqDisp;                         // Частота выводимая на дисплей
 const unsigned long freqSPI = 250000;  // Частота только для HW SPI AD9833
 // UNO SW SPI = 250kHz
 const unsigned long availableTimers[] = { oneMinute * 15, oneMinute * 30, oneMinute * 45, oneMinute * 60 };
@@ -825,16 +826,17 @@ void tftDisplay() {
   }
 
   yield();
-  tft.drawCentreString("                       ", 120, 275, 2);
+  tft.drawCentreString("                         ", 120, 275, 2);
   yield();
   tft.drawCentreString(s, 120, 275, 2);
 
   // 2 строка Частота
   s1 = "";
-  s1 += "F="; //  Serial.println("F=");
-  float freq_tic = ifreq;
+  s1 += " F="; //  Serial.println("F=");
+  float freq_tic = freqDisp;
   float kHz = freq_tic / 1000;
-  s1 += String(kHz);              //Serial.println(kHz, 0);
+ 
+  s1 += String(kHz);               //Serial.println(kHz, 0);
   s1 += " kHz  ";                  //(Serial.println("kHz");
 
   // 2 строка Ток
@@ -843,7 +845,7 @@ void tftDisplay() {
   s1 += String(Data_ina219 * 2);  //Serial.println(Data_ina219 * 2);
   s1 += " ma";                     //Serial.println("ma");
   yield();
-  tft.drawCentreString("                      ", 120, 293, 2);
+  tft.drawCentreString("                          ", 120, 293, 2);
   yield();
   tft.drawCentreString(s1, 120, 293, 2);
 }
@@ -1246,7 +1248,7 @@ void goZepper() {
 
     if (Cicle.Freq > 0) {                      // Если в массиве частота не 0 то работаем по циклограмме
       // Режим генератора синус/меандр
-      if (fgen != Cicle.ModeGen) {             // смена режима, пауза, зумм 5 секунд
+      if (fgen != Cicle.ModeGen) {             // смена режима, пауза, Зуммер 5 секунд
         fgen = Cicle.ModeGen;
         Serial.println("Смена режима выхода");
         start_Buzzer();                        // Звуковой сигнал
@@ -1275,19 +1277,26 @@ void goZepper() {
         Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
         si5351.output_enable(SI5351_CLK0,1);
         setSI5351Freq(Cicle.Freq);
+        freqDisp = Cicle.Freq;                    // Частота, вывести на дисплей
+        readDamp(power);                          // Получить уровень мощности
+        
+#ifdef DEBUG        
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
-        readDamp(power);                          // Получить уровень мощности
+     
         printModeSigToSerial(Cicle.ModeSig);
 
         // в этом месте вывести (продублировать) бы информацию на дисплей
 
         Serial.print("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
+#endif 
 
+#ifndef TFT_ERR
+        tftDisplay();
+#endif
         // Выводим часы по времени экспозиции, опроса кнопок не реализовано (временно)
-
         testTFT(Cicle.Exposite * 1000);
 
 #ifndef TFT_ERR
@@ -1300,6 +1309,7 @@ void goZepper() {
           printTimeSerial(Cicle.Pause);
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           si5351.output_enable(SI5351_CLK0,0);
+          freqDisp = 0;
           testTFT(Cicle.Pause * 1000);
 
 #ifndef TFT_ERR
@@ -1308,6 +1318,7 @@ void goZepper() {
 
           digitalWrite(ON_OFF_CASCADE_PIN, HIGH); // Разрешение выхода
           si5351.output_enable(SI5351_CLK0,1);
+          freqDisp = Cicle.Freq;
         }
       } else {                                  // *** Режим меандра ***
         digitalWrite(PIN_RELE, HIGH);            // Выход реле (NO)
@@ -1327,6 +1338,8 @@ void goZepper() {
         Ad9833.setFrequency(MD_AD9833::CHAN_0, (float)Cicle.Freq);
         si5351.output_enable(SI5351_CLK0,1);
         setSI5351Freq(Cicle.Freq);
+        freqDisp = Cicle.Freq;      // Частота, вывести на дисплей
+       
         Serial.print("Частота ");
         Serial.print((float)Cicle.Freq / 1000, 3);
         Serial.println(" KHz");
@@ -1334,7 +1347,9 @@ void goZepper() {
         printModeSigToSerial(Cicle.ModeSig);
 
         // Здесть может быть вывод на TFT экран
-
+#ifndef TFT_ERR
+        tftDisplay();
+#endif
         Serial.println("ЖдёM ");
         printTimeSerial(Cicle.Exposite);
         testTFT(Cicle.Exposite * 1000);
@@ -1350,7 +1365,8 @@ void goZepper() {
           digitalWrite(ON_OFF_CASCADE_PIN, LOW); // Разрешение выхода
           si5351.output_enable(SI5351_CLK0,0);
           testTFT(Cicle.Pause * 1000);
-
+          freqDisp = 0;
+          
 #ifndef TFT_ERR
           tftDisplay();
 #endif
@@ -1379,10 +1395,10 @@ void goZepper() {
 
   // Почистим строку экрана
   yield();
-  tft.drawCentreString("                     ", 120, 275, 2);
+  tft.drawCentreString("                       ", 120, 275, 2);
   yield();
   tft.drawCentreString("Zepper is OFF", 120, 275, 2);
-  delay(60000);
+  delay(10);
 }
 // ******** Конец процедуры ZEPPER ********* //
 
