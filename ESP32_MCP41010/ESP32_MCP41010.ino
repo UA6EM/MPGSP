@@ -16,6 +16,7 @@
 
 /*
     Версия:
+    07.05.2024 - Добавил возможность работы с файловой системой LittleFS
     24.04.2024 - в работе версия для TFT дисплея
     04.04.2024 - проверена работа экрана LCD
 
@@ -372,6 +373,7 @@ static uint8_t conv2d(const char* p) {
 
 // ******************** БЛОК ФУНКЦИЙ ПО РАБОТЕ В БАЗОЙ ДАННЫХ ********************//
 #define FORMAT_SPIFFS_IF_FAILED true
+#define FORMAT_LITTLEFS_IF_FAILED true
 
 int zepDbFreq[42];    // массив из таблицы частот
 int zepDbExpo[42];    // массив из таблицы экспозиций
@@ -397,9 +399,13 @@ const char* DBName = "/sd/standard1.db";
 #ifdef SD_CARD_MMC
 const char* DBName = "/sdcard/standard1.db";
 #else
+#ifdef LITTLEFS
+const char* DBName = "/littlefs/standard1.db";
+#else
 const char* DBName = "/spiffs/standard1.db";
 //const char* DBName = "/spiffs/zepper.db";
 //const char* DBName = "/spiffs/std.db";
+#endif
 #endif
 #endif
 
@@ -863,10 +869,17 @@ int readSqlDB() {
   //SPI.begin();
   //SD.begin();
 #else
+#ifdef LITTLEFS
+if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+       Serial.println("Failed to mount file system");
+       return 0;
+   }
+#else
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("Failed to mount file system");
     return 0;
   }
+#endif
 #endif
 #endif
 
@@ -997,7 +1010,11 @@ int readSqlDB() {
 #ifdef SD_CARD
   SD.end();
 #else
+#ifdef LITTLEFS
+  LittleFS.end();
+#else
   SPIFFS.end();
+#endif
 #endif
 #endif
 
