@@ -16,6 +16,7 @@
 
 /*
     Версия:
+    08.05.2024 - Добавил возможности библиотеки GyverHUB ( управление FS)
     07.05.2024 - Добавил возможность работы с файловой системой LittleFS
     24.04.2024 - в работе версия для TFT дисплея
     04.04.2024 - проверена работа экрана LCD
@@ -35,7 +36,11 @@
     SPI версии 2.0.0
     WiFi версии 2.0.0                                  -
 */
-
+#include <Arduino.h>
+#define GH_INCLUDE_PORTAL
+#define GH_FILE_PORTAL
+#include <GyverHub.h>
+GyverHub hub;
 
 // Определения
 #define WIFI                             // Используем модуль вайфая
@@ -491,6 +496,7 @@ void task0(void* arg)
     //pcnt_counter_clear(PCNT_UNIT_0);
     //Serial.println(count);
     delay(1);
+    hub.tick();
   }
 }
 
@@ -1178,6 +1184,19 @@ void setup() {
   pcnt_counter_clear(PCNT_UNIT_0);
   pcnt_counter_resume(PCNT_UNIT_0); //Start
 
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println();
+    Serial.println(WiFi.localIP());
+
+    hub.config(F("MyDevices"), F("MPGSP-ESP32"));
+    //hub.onBuild(build);
+    hub.begin();
 } 
 // ********   END  SETUP   ******** //
 
