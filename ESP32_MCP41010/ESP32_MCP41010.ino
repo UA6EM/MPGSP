@@ -207,6 +207,20 @@ TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
 
 //    *** Используемые подпрограммы выносим сюда ***   //
+
+// билдер
+void build(gh::Builder& b) {
+   {
+        gh::Row r(b);
+        b.GaugeRound().value(33).unit("%");
+        {
+            gh::Col c(b);
+            b.Gauge().value(63);
+            b.GaugeLinear().value(12);
+        }
+    }
+}
+
 /*--------------------------------------------------------------------------
         Timer ISR
   ---------------------------------------------------------------------------*/
@@ -1209,7 +1223,7 @@ void setup() {
     DEBUG_OUTPUT_PORT.println(".local");
 
     hub.config(F("MyDevices"), F(host));
-    //hub.onBuild(build);
+    hub.onBuild(build);
     hub.begin();
 } 
 // ********   END  SETUP   ******** //
