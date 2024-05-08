@@ -34,7 +34,15 @@
     SPIFFS версии 2.0.0
     FS версии 2.0.0
     SPI версии 2.0.0
-    WiFi версии 2.0.0                                  -
+    WiFi версии 2.0.0   
+    
+    Для работы GyverHub необходимы библиотеки:
+    pubsubclient                                  - https://github.com/knolleary/pubsubclient
+    arduinoWebSockets                             - https://github.com/Links2004/arduinoWebSockets
+    StringUtils                                   - https://github.com/GyverLibs/StringUtils
+    GSON                                          - https://github.com/GyverLibs/GSON
+    Pairs                                         - https://github.com/GyverLibs/Pairs
+
 */
 #include <Arduino.h>
 #define GH_INCLUDE_PORTAL
@@ -72,6 +80,7 @@ GyverHub hub;
 #include <WiFi.h>
 //#include <HTTPClient.h>
 #include <WiFiClient.h>
+#include <ESPmDNS.h>
 #endif
 
 #include <stdio.h>
@@ -1189,12 +1198,17 @@ void setup() {
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        Serial.print(".");
+        DEBUG_OUTPUT_PORT.print(".");
     }
-    Serial.println();
-    Serial.println(WiFi.localIP());
+    DEBUG_OUTPUT_PORT.println();
+    DEBUG_OUTPUT_PORT.println(WiFi.localIP());
+    
+    MDNS.begin(host);
+    DEBUG_OUTPUT_PORT.print("Open http://");
+    DEBUG_OUTPUT_PORT.print(host);
+    DEBUG_OUTPUT_PORT.println(".local");
 
-    hub.config(F("MyDevices"), F("MPGSP-ESP32"));
+    hub.config(F("MyDevices"), F(host));
     //hub.onBuild(build);
     hub.begin();
 } 
