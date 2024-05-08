@@ -210,16 +210,13 @@ TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
 // билдер
 void build(gh::Builder& b) {
-   {
-        gh::Row r(b);
-        b.GaugeRound().value(33).unit("%");
+
         {
             gh::Col c(b);
-            b.Gauge().value(63);
+            b.Gauge().value(map(wiperValue, 0, 255, 0, 100));
             b.GaugeLinear().value(12);
         }
-    }
-}
+ }
 
 /*--------------------------------------------------------------------------
         Timer ISR
@@ -519,7 +516,7 @@ void task0(void* arg)
     //pcnt_counter_clear(PCNT_UNIT_0);
     //Serial.println(count);
     delay(1);
-    hub.tick();
+   // hub.tick();
   }
 }
 
@@ -1295,6 +1292,8 @@ void loop() {
     tftDisplay();
 #endif
   }
+    hub.tick();
+    hub.refresh();
 } // *************** E N D  L O O P ****************
 
 
