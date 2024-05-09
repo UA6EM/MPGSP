@@ -213,7 +213,7 @@ void build(gh::Builder& b) {
 
         {
             gh::Col c(b);
-            b.Gauge().value(map(wiperValue, 0, 255, 0, 100));
+            b.Gauge("Power1").value(map(wiperValue,0,255,0,100)).range( 0,100,1).unit("%").color(gh::Colors::Green);
             b.GaugeLinear().value(12);
         }
  }
@@ -516,7 +516,9 @@ void task0(void* arg)
     //pcnt_counter_clear(PCNT_UNIT_0);
     //Serial.println(count);
     delay(1);
-   // hub.tick();
+    yield();
+    hub.tick();
+   // hub.sendUpdate("Power1"); // не вижу, что идут запросы на обновление, если задействовать
   }
 }
 
@@ -1229,6 +1231,7 @@ void setup() {
 // ******** ТЕЛО ПРОГРАММЫ ******** //
 void loop() {
   mill = millis();
+ // hub.sendUpdate("Power1");
   
   readButtons();
   
@@ -1292,14 +1295,14 @@ void loop() {
     tftDisplay();
 #endif
   }
-    hub.tick();
-    hub.refresh();
-} // *************** E N D  L O O P ****************
+    //hub.tick();
+   //hub.refresh();
+} // *************** E N D  L O O P **************** //
 
 
 
 
-// ***************** Функция Цеппера ****************
+// ***************** Функция Цеппера **************** //
 void goZepper() {
   int sst = 0;       // возьмём нулевой элемент массива
   bool fgen = false; // синус / меандр = true (отслеживание смены режима)
