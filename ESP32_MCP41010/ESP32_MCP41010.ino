@@ -518,6 +518,7 @@ void task0(void* arg)
     delay(1);
     yield();
     hub.tick();
+    
    // hub.sendUpdate("Power1"); // не вижу, что идут запросы на обновление, если задействовать
   }
 }
