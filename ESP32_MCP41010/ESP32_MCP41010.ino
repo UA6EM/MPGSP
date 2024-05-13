@@ -36,7 +36,7 @@
     SPI версии 2.0.0
     WiFi версии 2.0.0   
     
-    Для работы GyverHub необходимы библиотеки:
+    Для работы GyverHub необходимы библиотеки:    - https://github.com/GyverLibs/GyverHub
     pubsubclient                                  - https://github.com/knolleary/pubsubclient
     arduinoWebSockets                             - https://github.com/Links2004/arduinoWebSockets
     StringUtils                                   - https://github.com/GyverLibs/StringUtils
@@ -516,7 +516,7 @@ void task0(void* arg)
     //pcnt_counter_clear(PCNT_UNIT_0);
     //Serial.println(count);
     delay(1);
-    yield();
+    //yield();
     hub.tick();
     
    // hub.sendUpdate("Power1"); // не вижу, что идут запросы на обновление, если задействовать
